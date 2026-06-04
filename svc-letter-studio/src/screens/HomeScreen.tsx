@@ -19,7 +19,7 @@ export default function HomeScreen({ navigate }: Props) {
         />
         <h1 className="text-2xl font-semibold tracking-widest uppercase mb-1"
             style={{ fontFamily: 'var(--font-brand)', color: 'var(--color-brown)' }}>
-          Sri Vaishnav
+          Sri Vaishnav Constructions
         </h1>
         <p className="text-xs tracking-[0.25em] uppercase"
            style={{ color: 'var(--color-brown-muted)' }}>
