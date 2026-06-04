@@ -5,6 +5,7 @@ import Watermark from './Watermark'
 
 const styles = StyleSheet.create({
   page: {
+    // No fontFamily here — components set their own using PDFKit built-ins.
     backgroundColor: COLORS.ivory,
   },
   minimalTopBar: {
@@ -14,7 +15,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 36,
     paddingTop: 24,
     paddingBottom: 10,
-    backgroundColor: COLORS.ivory,
   },
   brandName: {
     fontFamily: 'Helvetica-Bold',

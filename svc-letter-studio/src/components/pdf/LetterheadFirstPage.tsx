@@ -6,14 +6,14 @@ import Watermark from './Watermark'
 
 const styles = StyleSheet.create({
   page: {
+    // Do NOT set fontFamily here — 'Montserrat' is not registered in @react-pdf/renderer.
+    // Each component sets its own fontFamily using PDFKit built-ins (Helvetica, etc).
     backgroundColor: COLORS.ivory,
-    fontFamily: 'Montserrat',
   },
   contentArea: {
     flex: 1,
     marginHorizontal: 36,
     marginTop: 20,
-    // bottom margin is occupied by the absolute-positioned Footer (≈56pt)
     marginBottom: 72,
   },
 })
