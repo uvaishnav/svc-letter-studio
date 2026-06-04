@@ -15,16 +15,22 @@ export default function App() {
 
   const navigate = (s: Screen) => setScreen(s)
 
+  const isPreview = screen === 'preview'
+
   return (
-    <div className="flex flex-col min-h-dvh" style={{ background: 'var(--color-ivory)' }}>
-      <main className="flex-1 overflow-y-auto pb-[env(safe-area-inset-bottom)]">
+    // On preview: dark background fills the entire viewport, no ivory bleed-through.
+    <div
+      className="flex flex-col min-h-dvh"
+      style={{ background: isPreview ? '#1C1C1E' : 'var(--color-ivory)' }}
+    >
+      <main className="flex-1 overflow-y-auto" style={isPreview ? {} : { paddingBottom: 'env(safe-area-inset-bottom)' }}>
         {screen === 'home'     && <HomeScreen     navigate={navigate} />}
         {screen === 'intake'   && <IntakeScreen   navigate={navigate} />}
         {screen === 'draft'    && <DraftScreen    navigate={navigate} />}
         {screen === 'preview'  && <PreviewScreen  navigate={navigate} state={state} />}
         {screen === 'settings' && <SettingsScreen navigate={navigate} />}
       </main>
-      {screen !== 'preview' && <BottomNav current={screen} navigate={navigate} />}
+      {!isPreview && <BottomNav current={screen} navigate={navigate} />}
     </div>
   )
 }
