@@ -1,100 +1,91 @@
-# Decisions Log
+# Decisions
 
-This file documents all key product, design, and technical decisions made.
-Update this whenever a decision is changed or a new one is made during a session.
-
----
-
-## D001 — PDF rendering library
-**Decision:** Use `@react-pdf/renderer`
-**Reason:** True vector PDF output suitable for professional printing. Better than html2canvas which produces screenshot-based PDFs.
+## D001 — Framework
+**Decision:** React + Vite + TypeScript
+**Reason:** Fast dev server, excellent PWA support via vite-plugin-pwa, strong typing.
 **Status:** Final
 
 ---
 
-## D002 — Platform
-**Decision:** Mobile-first PWA hosted on Cloudflare Pages or Vercel
-**Reason:** Free hosting, no cold starts on Cloudflare, PWA Add to Home Screen works on iPhone Safari.
+## D002 — PDF Engine
+**Decision:** `@react-pdf/renderer`
+**Reason:** React component model for PDF layout. Declarative, composable.
 **Status:** Final
 
 ---
 
-## D003 — No database
-**Decision:** No backend database in v1
-**Reason:** The product is a private personal tool. No document persistence needed. Each session is self-contained.
+## D003 — Styling
+**Decision:** Tailwind CSS v4 (via `@tailwindcss/vite` plugin)
+**Reason:** Utility-first, no config file needed in v4, integrates cleanly with Vite.
 **Status:** Final
 
 ---
 
-## D004 — AI provider strategy
-**Decision:** Gemini Flash as primary, Groq as fallback
-**Reason:** Gemini Flash has the best combination of quality, speed, and free-tier generosity for document drafting tasks. Groq provides high-speed inference as a reliable free fallback.
+## D004 — State Management
+**Decision:** In-memory React state only (no localStorage, no sessionStorage)
+**Reason:** Sandboxed environments block storage APIs. Session resets on refresh by design.
 **Status:** Final
 
 ---
 
-## D005 — AI intake UX
-**Decision:** User writes everything first in one freeform input. AI then asks only missing questions one at a time.
-**Reason:** Starting with forced one-question-at-a-time is frustrating when users already know most of their requirements. Freeform-first approach is more natural and faster for experienced users.
+## D005 — AI Provider
+**Decision:** Gemini Flash (primary) + Groq (fallback), routed through `src/ai/adapter.ts`
+**Reason:** Redundancy for uptime. Single adapter interface keeps components clean.
 **Status:** Final
 
 ---
 
-## D006 — Letterhead header style
-**Decision:** Open ivory header (no heavy full-bleed dark bar). Logo on ivory background with gold hairline divider below.
-**Reason:** Full-bleed dark headers suit large EPC firms with universal brand recognition. For a regional construction firm, the open elegant header reads more refined and premium.
+## D006 — PWA
+**Decision:** `vite-plugin-pwa` with `registerType: autoUpdate`
+**Reason:** Auto-update keeps users on latest version without prompts.
 **Status:** Final
 
 ---
 
-## D007 — Watermark
-**Decision:** Icon-only watermark (not wordmark) at 3–4% opacity, centered in body area. Default enabled, configurable off.
-**Reason:** Fills the body area intentionally, subtly reinforces brand without interfering with reading or printing.
+## D007 — Screen Routing
+**Decision:** State-driven screen switching in `App.tsx` (no URL router)
+**Reason:** Simpler for a single-flow app. No URL bar clutter on mobile.
 **Status:** Final
 
 ---
 
 ## D008 — Typography
-**Decision:** Cormorant Garamond SemiBold for "SRI VAISHNAV" only. Montserrat for all other text.
+**Decision:** Cormorant Garamond SemiBold for `SRI VAISHNAV` only. Montserrat for all other text.
 **Reason:** Matches the premium construction firm identity. Two-font discipline keeps the letterhead clean.
 **Status:** Final
 
 ---
 
-## D009 — Brand colors
-**Decision:** Dark Brown `#3B2A1F`, Warm Ivory `#F5F1E8`, Gold `#C8A96A`
-**Reason:** Confirmed brand colors for Sri Vaishnav Constructions.
+## D009 — PDF Font Loading Strategy
+**Decision:** Self-host TTF files in `public/fonts/`. Register via `Font.register()` with absolute URLs using `window.location.origin`.
+**Reason:** `@react-pdf/renderer` (PDFKit) fetches fonts via raw XHR and can only parse `.ttf`/`.otf`. Google Fonts CDN serves `.woff2` to browsers which PDFKit cannot parse. Self-hosted TTF is the only reliable approach.
+**Status:** Final
+**Requires:** Manual step — 5 TTF files must be placed in `public/fonts/`. See `docs/FONTS.md`.
+
+---
+
+## D010 — PDF Render Architecture
+**Decision:** Single `BlobProvider` in `PreviewScreen`. No `PDFDownloadLink`.
+**Reason:** `@react-pdf/renderer` v4 crashes when two PDF instances render simultaneously (e.g. `BlobProvider` + `PDFDownloadLink`). Single `BlobProvider` drives both the inline `<object>` preview and the download button via `URL.createObjectURL(blob)`.
 **Status:** Final
 
 ---
 
-## D010 — Signatory defaults
-**Decision:** Default to UPPALAPATI SUREKHA / Proprietor
-**Reason:** Standard signatory details for Sri Vaishnav Constructions.
-**Status:** Final. Editable per-document and in app settings.
-
----
-
-## D011 — Multi-page strategy
-**Decision:** First page uses full letterhead. Continuation pages use minimal top identity + watermark + page number.
-**Reason:** Full letterhead on every page wastes visual space. Minimal continuation is industry standard.
+## D011 — Buffer Polyfill
+**Decision:** Inline IIFE shim in `main.tsx` (must be first code executed). Plus `define` block in `vite.config.ts`.
+**Reason:** Vite externalizes the `buffer` npm package for browser builds. Bare `import { Buffer } from 'buffer'` throws at runtime. The inline shim installs a `Uint8Array`-based `Buffer` on `globalThis` before any other module loads.
 **Status:** Final
 
 ---
 
-## D012 — Development approach
-**Decision:** Feature-by-feature development across multiple sessions. One phase per session. Documentation updated at end of each session.
-**Reason:** Large app cannot be built in one session. Clear phased approach with documentation ensures continuity.
-**Status:** Active ongoing process
+## D012 — Preview Screen Layout
+**Decision:** `<object>` PDF preview shown on all devices (no mobile/desktop split).
+**Reason:** Earlier `isMobile()` userAgent detection was hiding preview on phones. `<object>` works on Chrome Android and most mobile browsers. iOS Safari fallback card with download button handles the edge case.
+**Status:** Final
 
 ---
 
-## Template for new decisions
-
-```
-## D0XX — [Short title]
-**Decision:** [What was decided]
-**Reason:** [Why]
-**Previous decision if changed:** [What changed and why]
-**Status:** Final / Active / Under review
-```
+## D013 — Preview Screen Background
+**Decision:** `App.tsx` sets `background: #1C1C1E` on the root div when on preview screen.
+**Reason:** Without this, the ivory body background bleeds through below `PreviewScreen` content when `BottomNav` is hidden, creating a white gap at the bottom.
+**Status:** Final

@@ -1,24 +1,42 @@
 # Changelog
 
-## [Phase 1] — 2026-06-03 — Foundation & Design System
+## [Phase 2 — Bug Fix Session] — 2026-06-04
+
+### Fixed
+- `main.tsx` — Replaced bare `import { Buffer } from 'buffer'` (Vite externalizes it) with an inline IIFE shim that installs `Buffer` on `globalThis` before any other module loads. Implements `from`, `alloc`, `allocUnsafe`, `isBuffer`, `concat` via native `Uint8Array`.
+- `vite.config.ts` — Added `define` block: `global: 'globalThis'`, `process.env: '{}'`, `process.browser: 'true'` to satisfy PDFKit Node-like environment checks.
+- `LetterheadFirstPage.tsx` — Removed `fontFamily: 'Montserrat'` from `<Page>` style. Was causing `Font family not registered` error because Montserrat was not yet registered when Page style evaluated.
+- `LetterheadContinuationPage.tsx` — Same fix as above.
+- `PreviewScreen.tsx` — Removed `PDFDownloadLink` from top bar entirely. Replaced with a plain `<button>` that calls `URL.createObjectURL(blob)`. Eliminates double-render crash caused by `BlobProvider` + `PDFDownloadLink` both rendering the PDF simultaneously (known `@react-pdf/renderer` v4 limitation).
+- `PreviewScreen.tsx` — Removed `isMobile()` userAgent check. `<object>` PDF preview now shown on all devices. Fallback card shown inside `<object>` for browsers that block inline PDF (some iOS Safari).
+- `App.tsx` — Dynamic background: `#1C1C1E` when on preview screen, `var(--color-ivory)` otherwise. Eliminates ivory bleed-through visible below preview content.
+- `index.html` — Added `<meta name="mobile-web-app-capable" content="yes">` (modern standard) alongside existing Apple tag.
 
 ### Added
-- `svc-letter-studio/vite.config.ts` — Vite config with `@tailwindcss/vite` plugin and `vite-plugin-pwa` (PWA manifest, workbox, icons configured)
-- `svc-letter-studio/src/index.css` — Tailwind v4 import, Google Fonts (Cormorant Garamond + Montserrat), CSS custom properties for all brand colors and fonts, safe-area inset helpers
-- `svc-letter-studio/src/main.tsx` — App entry point
-- `svc-letter-studio/src/App.tsx` — State-driven screen router (no URL router), exports `Screen` type, hides BottomNav on preview screen
-- `svc-letter-studio/src/App.css` — Cleared to minimal comment only
-- `svc-letter-studio/src/constants/brand.ts` — `COLORS`, `FONTS`, brand name strings, `CONTACT` constants
-- `svc-letter-studio/src/constants/defaults.ts` — `DEFAULT_SIGNATORY` (UPPALAPATI SUREKHA / Proprietor), `DEFAULT_PDF_SETTINGS`
-- `svc-letter-studio/src/store/sessionStore.ts` — `useSessionStore` hook, `SessionState` / `DocumentContext` / `PDFSettings` interfaces, `initialState`
-- `svc-letter-studio/src/screens/HomeScreen.tsx` — Branded home with logo, Compose button, Upload/Settings grid, Recent Letters placeholder
-- `svc-letter-studio/src/screens/IntakeScreen.tsx` — Placeholder with back nav and Continue button
-- `svc-letter-studio/src/screens/DraftScreen.tsx` — Placeholder with back nav and Preview button
-- `svc-letter-studio/src/screens/PreviewScreen.tsx` — Full-screen dark preview layout, top bar with Back/Export, A4 aspect ratio placeholder
-- `svc-letter-studio/src/screens/SettingsScreen.tsx` — Signatory display, watermark toggle placeholder
-- `svc-letter-studio/src/components/ui/BottomNav.tsx` — Dark brown bottom nav, gold active state, safe-area-inset-bottom padding for iPhone
-- `svc-letter-studio/index.html` — PWA meta tags (apple-mobile-web-app-capable, status-bar-style, theme-color, apple-touch-icon)
+- `src/pdf/fonts.ts` — Proper `Font.register()` calls for Cormorant Garamond (600) and Montserrat (400, 400i, 600, 700) loading from `public/fonts/*.ttf` via `window.location.origin` absolute URLs. Includes `Font.registerHyphenationCallback` to prevent hyphenation.
+- `docs/FONTS.md` — Step-by-step instructions for downloading and placing the 5 required TTF files in `public/fonts/`.
 
-### Notes
-- `index.html` script src path needs verification — should be `/src/main.tsx` not `/svc-letter-studio/src/main.tsx` depending on Vite root config
-- Logo and PWA icon assets not yet added (manual step for user)
+### Changed (Premium Redesign)
+- `Header.tsx` — Redesigned: 3pt gold top edge + dark brown brand band with logo, `SRI VAISHNAV` in Cormorant Garamond 22pt tracked, flanking gold lines, `CONSTRUCTIONS` in Montserrat tracked caps, italic tagline.
+- `Footer.tsx` — Redesigned: dark brown band matching header, gold top accent, two-row layout (phone + brand + email / address + GSTIN).
+- `Watermark.tsx` — Switched from text to logo image at 3.5% opacity, centred on page.
+- `Signatory.tsx` — Redesigned: right-aligned signature block with ruled line, gold stamp badge flanked by hairlines, name in Montserrat Bold tracked caps, designation in Montserrat Regular.
+
+---
+
+## [Phase 2 — Initial Build] — 2026-06-03
+
+### Added
+- `svc-letter-studio/vite.config.ts` — Vite config with `@tailwindcss/vite` plugin and `vite-plugin-pwa`
+- `svc-letter-studio/src/index.css` — Tailwind v4 import, Google Fonts (Cormorant Garamond + Montserrat), CSS custom properties for brand colors and fonts
+- `svc-letter-studio/src/main.tsx` — App entry point
+- `svc-letter-studio/src/App.tsx` — State-driven screen router, hides BottomNav on preview screen
+- `svc-letter-studio/src/App.css` — Cleared to minimal comment only
+- `src/components/pdf/LetterheadDocument.tsx` — Root PDF Document component
+- `src/components/pdf/LetterheadFirstPage.tsx` — First page layout with header/footer/watermark
+- `src/components/pdf/LetterheadContinuationPage.tsx` — Continuation page with minimal top bar
+- `src/components/pdf/Header.tsx` — Brand header
+- `src/components/pdf/Footer.tsx` — Contact footer
+- `src/components/pdf/Watermark.tsx` — Background watermark
+- `src/components/pdf/Signatory.tsx` — Signature block
+- `src/screens/PreviewScreen.tsx` — Preview and export screen

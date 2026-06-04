@@ -1,110 +1,94 @@
 # Architecture
 
-## Project structure
+## Stack
+- **React 19** + **Vite 6** + **TypeScript**
+- **@react-pdf/renderer v4** — PDF generation in browser via Web Worker
+- **Tailwind CSS v4** — via `@tailwindcss/vite` plugin (no `tailwind.config.js`)
+- **vite-plugin-pwa** — PWA manifest, service worker, offline support
+- **mammoth** — `.docx` parsing (Phase 7)
+- **Gemini Flash + Groq** — AI providers via `src/ai/adapter.ts` (Phase 4+)
+
+---
+
+## Directory Structure
 
 ```
-svc-letter-studio/               ← repo root
-├── docs/                        ← session documentation
-└── svc-letter-studio/           ← Vite app root
-    ├── public/
-    │   ├── icons/               ← PWA icons (192, 512, apple-touch) [MANUAL: add these]
-    │   └── logo/                ← SVC logo assets [MANUAL: add logo.svg + logo.png]
-    ├── src/
-    │   ├── ai/
-    │   │   ├── providers/
-    │   │   │   ├── gemini.ts    ← Phase 4
-    │   │   │   └── groq.ts      ← Phase 4
-    │   │   ├── adapter.ts       ← Phase 4 — common provider interface
-    │   │   └── prompts/         ← Phase 5+
-    │   ├── components/
-    │   │   ├── ui/
-    │   │   │   └── BottomNav.tsx  ✅ Phase 1
-    │   │   └── pdf/             ← Phase 2
-    │   │       ├── LetterheadFirstPage.tsx
-    │   │       ├── LetterheadContinuationPage.tsx
-    │   │       ├── Header.tsx
-    │   │       ├── Footer.tsx
-    │   │       └── Watermark.tsx
-    │   ├── screens/
-    │   │   ├── HomeScreen.tsx     ✅ Phase 1
-    │   │   ├── IntakeScreen.tsx   ✅ Phase 1 (placeholder)
-    │   │   ├── DraftScreen.tsx    ✅ Phase 1 (placeholder)
-    │   │   ├── PreviewScreen.tsx  ✅ Phase 1 (placeholder)
-    │   │   └── SettingsScreen.tsx ✅ Phase 1 (placeholder)
-    │   ├── schema/
-    │   │   ├── documentTypes.ts   ← Phase 3
-    │   │   └── documentSchema.ts  ← Phase 3
-    │   ├── store/
-    │   │   └── sessionStore.ts    ✅ Phase 1 — useSessionStore hook
-    │   ├── utils/
-    │   │   ├── fileParser.ts      ← Phase 7
-    │   │   └── pdfExport.ts       ← Phase 8
-    │   ├── constants/
-    │   │   ├── brand.ts           ✅ Phase 1 — COLORS, FONTS, BRAND_NAME, CONTACT
-    │   │   └── defaults.ts        ✅ Phase 1 — DEFAULT_SIGNATORY, DEFAULT_PDF_SETTINGS
-    │   ├── App.tsx                ✅ Phase 1 — state-driven Screen router
-    │   └── main.tsx               ✅ Phase 1
-    ├── index.html                 ✅ Phase 1 — PWA meta tags
-    ├── vite.config.ts             ✅ Phase 1 — PWA + Tailwind v4 plugins
-    ├── tailwind.config.ts         ← not needed for Tailwind v4 (uses vite plugin)
-    └── package.json
+svc-letter-studio/
+├── public/
+│   ├── fonts/                  # Self-hosted TTF files (see docs/FONTS.md)
+│   │   ├── CormorantGaramond-SemiBold.ttf
+│   │   ├── Montserrat-Regular.ttf
+│   │   ├── Montserrat-Italic.ttf
+│   │   ├── Montserrat-SemiBold.ttf
+│   │   └── Montserrat-Bold.ttf
+│   ├── logo/
+│   │   ├── logo.png             # Used in PDF header + watermark
+│   │   └── logo.svg
+│   └── icons/                  # PWA icons
+├── src/
+│   ├── ai/
+│   │   └── adapter.ts           # All AI calls go here (Phase 4+)
+│   ├── components/
+│   │   ├── pdf/                 # @react-pdf/renderer components
+│   │   │   ├── LetterheadDocument.tsx
+│   │   │   ├── LetterheadFirstPage.tsx
+│   │   │   ├── LetterheadContinuationPage.tsx
+│   │   │   ├── Header.tsx
+│   │   │   ├── Footer.tsx
+│   │   │   ├── Watermark.tsx
+│   │   │   └── Signatory.tsx
+│   │   └── ui/                  # App shell UI components
+│   │       └── BottomNav.tsx
+│   ├── constants/
+│   │   └── brand.ts             # COLORS, FONTS, CONTACT, BRAND_NAME_*, BRAND_TAGLINE
+│   ├── pdf/
+│   │   └── fonts.ts             # Font.register() calls — imported once in LetterheadDocument
+│   ├── screens/
+│   │   ├── HomeScreen.tsx
+│   │   ├── IntakeScreen.tsx
+│   │   ├── DraftScreen.tsx
+│   │   ├── PreviewScreen.tsx    # Single BlobProvider — see D010
+│   │   └── SettingsScreen.tsx
+│   ├── store/
+│   │   └── sessionStore.ts      # In-memory state (no localStorage)
+│   ├── App.tsx               # Screen router + BottomNav visibility + bg color
+│   ├── main.tsx              # Buffer polyfill IIFE (must stay first) + React root
+│   └── index.css             # Tailwind v4 + Google Fonts (web UI only) + CSS vars
+├── index.html             # PWA meta tags incl. mobile-web-app-capable
+├── vite.config.ts         # Vite + PWA + define block for global/process
+└── package.json
 ```
 
-## Routing
-State-driven via `useState<Screen>` in `App.tsx`. No URL router. `Screen` type is exported and imported by all screens and BottomNav.
+---
 
-## Key modules
+## Key Architectural Rules
 
-### Session store
-`useSessionStore()` in `src/store/sessionStore.ts` — single hook exposing `{ state, update }`. `update()` does a shallow merge. Passed down as props or lifted to `App.tsx` when needed.
+1. **All AI calls** must go through `src/ai/adapter.ts`. Never call Gemini or Groq directly.
+2. **No localStorage / sessionStorage** — blocked in sandboxed environments.
+3. **Single `BlobProvider`** per PDF render. Never use `PDFDownloadLink` alongside `BlobProvider` (double render crash in v4).
+4. **Font files** must be `.ttf` in `public/fonts/`. Google Fonts CDN `.woff2` does not work with PDFKit.
+5. **Buffer polyfill** IIFE in `main.tsx` must remain the first executed code. Do not move it below any import.
+6. **CSS custom properties** in `index.css` are the single source of truth for brand colors and fonts in the web UI.
 
-### AI adapter interface (Phase 4)
-```ts
-interface AIProvider {
-  analyzeBrief(input: string, context: DocumentContext): Promise<AnalysisResult>
-  askNextQuestion(context: DocumentContext): Promise<string>
-  draftDocument(context: DocumentContext): Promise<string>
-  improveDraft(action: ImprovementAction, draft: string, context: DocumentContext): Promise<string>
-}
+---
+
+## PDF Render Flow
+
+```
+PreviewScreen
+  └── BlobProvider (renders once)
+        ├── loading → show pill
+        ├── error   → show error card
+        └── blob/url ready
+              ├── <object data={url}> → inline preview (all devices)
+              └── Download button → URL.createObjectURL(blob) → programmatic <a> click
 ```
 
-### PDF component hierarchy (Phase 2)
-```
-<LetterheadDocument>
-  <LetterheadFirstPage>
-    <Header />
-    <GoldDivider />
-    <Watermark />
-    <ContentArea>{children}</ContentArea>
-    <Footer />
-  </LetterheadFirstPage>
-  {extraPages.map(page =>
-    <LetterheadContinuationPage>
-      <MinimalTopBar />
-      <ContentArea>{page}</ContentArea>
-      <PageNumber />
-    </LetterheadContinuationPage>
-  )}
-</LetterheadDocument>
-```
+---
 
-## State model (in-memory only)
-```ts
-interface SessionState {
-  screen: 'home' | 'intake' | 'draft' | 'preview' | 'settings'
-  documentContext: DocumentContext
-  draftContent: string
-  pdfSettings: PDFSettings
-  signatoryName: string
-  signatoryDesignation: string
-}
-```
+## Environment Variables
 
-## No backend
-No API server. No database. All state lives in memory for session duration. No localStorage or sessionStorage.
-
-## Environment variables
 ```
-VITE_GEMINI_API_KEY=your_key_here
-VITE_GROQ_API_KEY=your_key_here
+VITE_GEMINI_API_KEY=
+VITE_GROQ_API_KEY=
 ```
