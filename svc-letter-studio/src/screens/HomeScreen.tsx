@@ -11,11 +11,12 @@ export default function HomeScreen({ navigate }: Props) {
 
       {/* Brand header */}
       <div className="text-center mb-10">
-        <div className="w-16 h-16 rounded-2xl mx-auto mb-4 flex items-center justify-center"
-             style={{ background: 'var(--color-brown)' }}>
-          <img src="/logo/logo.svg" alt="SVC" className="w-10 h-10 object-contain"
-               onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
-        </div>
+        <img
+          src="/logo/logo.svg"
+          alt="SVC"
+          className="w-16 mx-auto mb-4 object-contain"
+          onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+        />
         <h1 className="text-2xl font-semibold tracking-widest uppercase mb-1"
             style={{ fontFamily: 'var(--font-brand)', color: 'var(--color-brown)' }}>
           Sri Vaishnav
