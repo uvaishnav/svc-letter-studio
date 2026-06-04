@@ -11,38 +11,38 @@ const base = typeof window !== 'undefined' ? window.location.origin : ''
 const S = StyleSheet.create({
   wrapper: {
     flexDirection: 'column',
+    backgroundColor: COLORS.ivory,
   },
 
-  // The entire header sits on a pure white background
+  // Logo + text side by side, page margin on both sides
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingLeft: 30,
-    paddingRight: 30,
-    paddingTop: 18,
-    paddingBottom: 14,
-    backgroundColor: COLORS.white,
+    paddingHorizontal: 36,
+    paddingTop: 16,
+    paddingBottom: 12,
   },
 
-  // Logo — left side, square aspect
+  // Logo — 20% larger than before (64 → 77)
   logo: {
-    width: 64,
-    height: 64,
-    marginRight: 16,
+    width: 77,
+    height: 77,
+    marginRight: 14,
   },
 
-  // Text column to the right of logo
+  // Text column: flex-column, center-aligned, tight spacing
   textBlock: {
     flexDirection: 'column',
+    alignItems: 'center',
     justifyContent: 'center',
   },
 
-  // "SRI VAISHNAV" — large, Cormorant Garamond SemiBold, dark brown
+  // "SRI VAISHNAV" — Cinzel Bold, large, dark brown
   brandPrimary: {
-    fontFamily: 'Cormorant Garamond',
-    fontWeight: 600,
-    fontSize: 26,
-    letterSpacing: 5,
+    fontFamily: 'Cinzel',
+    fontWeight: 700,
+    fontSize: 24,
+    letterSpacing: 3,
     color: COLORS.brown,
     lineHeight: 1,
   },
@@ -51,41 +51,39 @@ const S = StyleSheet.create({
   brandRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 2,
-    gap: 5,
+    marginTop: 1,
+    gap: 4,
   },
 
-  // The em-dash lines flanking CONSTRUCTIONS
   dashLine: {
     height: 0.75,
-    width: 18,
+    width: 16,
     backgroundColor: COLORS.gold,
   },
 
-  // "CONSTRUCTIONS" text
   brandSecondary: {
     fontFamily: 'Montserrat',
     fontWeight: 600,
-    fontSize: 8,
+    fontSize: 7,
     letterSpacing: 4,
     color: COLORS.gold,
   },
 
-  // "ENGINEERING • INFRASTRUCTURE • CIVIL WORKS"
+  // Tagline — tight gap above
   tagline: {
     fontFamily: 'Montserrat',
     fontWeight: 400,
-    fontSize: 6,
-    letterSpacing: 1.5,
+    fontSize: 5.5,
+    letterSpacing: 1.2,
     color: COLORS.brownMuted,
-    marginTop: 6,
+    marginTop: 2,
   },
 
-  // Full-width gold hairline rule — runs edge to edge
+  // Full-width gold hairline rule, flush to page edges
   rule: {
-    height: 1,
+    height: 0.75,
     backgroundColor: COLORS.gold,
-    opacity: 0.8,
+    opacity: 0.85,
   },
 })
 

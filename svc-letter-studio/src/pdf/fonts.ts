@@ -5,6 +5,8 @@
 // We use window.location.origin to resolve correctly in dev and prod.
 //
 // REQUIRED FILES (see docs/FONTS.md for download instructions):
+//   public/fonts/Cinzel-Bold.ttf
+//   public/fonts/Cinzel-Regular.ttf
 //   public/fonts/CormorantGaramond-SemiBold.ttf
 //   public/fonts/Montserrat-Regular.ttf
 //   public/fonts/Montserrat-SemiBold.ttf
@@ -15,6 +17,16 @@ import { Font } from '@react-pdf/renderer'
 
 const base = typeof window !== 'undefined' ? window.location.origin : ''
 
+// Cinzel — Roman-style all-caps display serif, used for "SRI VAISHNAV"
+Font.register({
+  family: 'Cinzel',
+  fonts: [
+    { src: `${base}/fonts/Cinzel-Regular.ttf`, fontWeight: 400 },
+    { src: `${base}/fonts/Cinzel-Bold.ttf`,    fontWeight: 700 },
+  ],
+})
+
+// Cormorant Garamond — kept for potential body use
 Font.register({
   family: 'Cormorant Garamond',
   fonts: [
