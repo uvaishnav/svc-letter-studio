@@ -12,79 +12,80 @@ const S = StyleSheet.create({
   wrapper: {
     flexDirection: 'column',
   },
+
+  // The entire header sits on a pure white background
   headerRow: {
     flexDirection: 'row',
-    alignItems: 'stretch',
-  },
-  leftAccent: {
-    width: 2.5,
-    backgroundColor: COLORS.gold,
-  },
-  inner: {
-    flex: 1,
-    flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 28,
-    paddingTop: 20,
+    paddingLeft: 30,
+    paddingRight: 30,
+    paddingTop: 18,
     paddingBottom: 14,
-    backgroundColor: COLORS.ivory,
+    backgroundColor: COLORS.white,
   },
+
+  // Logo — left side, square aspect
   logo: {
-    width: 56,
-    height: 56,
-    marginRight: 18,
+    width: 64,
+    height: 64,
+    marginRight: 16,
   },
+
+  // Text column to the right of logo
   textBlock: {
     flexDirection: 'column',
     justifyContent: 'center',
   },
+
+  // "SRI VAISHNAV" — large, Cormorant Garamond SemiBold, dark brown
   brandPrimary: {
     fontFamily: 'Cormorant Garamond',
     fontWeight: 600,
-    fontSize: 24,
-    letterSpacing: 4,
+    fontSize: 26,
+    letterSpacing: 5,
     color: COLORS.brown,
     lineHeight: 1,
   },
+
+  // "— CONSTRUCTIONS —" row
   brandRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 3,
+    marginTop: 2,
     gap: 5,
   },
-  goldLine: {
+
+  // The em-dash lines flanking CONSTRUCTIONS
+  dashLine: {
     height: 0.75,
-    width: 16,
+    width: 18,
     backgroundColor: COLORS.gold,
   },
+
+  // "CONSTRUCTIONS" text
   brandSecondary: {
     fontFamily: 'Montserrat',
     fontWeight: 600,
-    fontSize: 7,
-    letterSpacing: 3.5,
+    fontSize: 8,
+    letterSpacing: 4,
     color: COLORS.gold,
   },
+
+  // "ENGINEERING • INFRASTRUCTURE • CIVIL WORKS"
   tagline: {
     fontFamily: 'Montserrat',
     fontWeight: 400,
     fontSize: 6,
-    letterSpacing: 1.2,
+    letterSpacing: 1.5,
     color: COLORS.brownMuted,
-    marginTop: 5,
-    textTransform: 'uppercase',
+    marginTop: 6,
   },
+
+  // Full-width gold hairline rule — runs edge to edge
   rule: {
-    height: 0.75,
+    height: 1,
     backgroundColor: COLORS.gold,
-    marginHorizontal: 30,
-    opacity: 0.6,
-  },
-  ruleShadow: {
-    height: 0.3,
-    backgroundColor: COLORS.brown,
-    marginHorizontal: 30,
-    marginTop: 1.5,
-    opacity: 0.08,
+    opacity: 0.8,
   },
 })
 
@@ -92,22 +93,18 @@ export default function Header() {
   return (
     <View style={S.wrapper}>
       <View style={S.headerRow}>
-        <View style={S.leftAccent} />
-        <View style={S.inner}>
-          <Image src={`${base}/logo/logo.png`} style={S.logo} />
-          <View style={S.textBlock}>
-            <Text style={S.brandPrimary}>{BRAND_NAME_PRIMARY}</Text>
-            <View style={S.brandRow}>
-              <View style={S.goldLine} />
-              <Text style={S.brandSecondary}>{BRAND_NAME_SECONDARY}</Text>
-              <View style={S.goldLine} />
-            </View>
-            <Text style={S.tagline}>{BRAND_TAGLINE}</Text>
+        <Image src={`${base}/logo/logo.png`} style={S.logo} />
+        <View style={S.textBlock}>
+          <Text style={S.brandPrimary}>{BRAND_NAME_PRIMARY}</Text>
+          <View style={S.brandRow}>
+            <View style={S.dashLine} />
+            <Text style={S.brandSecondary}>{BRAND_NAME_SECONDARY}</Text>
+            <View style={S.dashLine} />
           </View>
+          <Text style={S.tagline}>{BRAND_TAGLINE}</Text>
         </View>
       </View>
       <View style={S.rule} />
-      <View style={S.ruleShadow} />
     </View>
   )
 }
