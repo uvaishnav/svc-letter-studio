@@ -6,7 +6,6 @@ import Watermark from './Watermark'
 const styles = StyleSheet.create({
   page: {
     backgroundColor: COLORS.ivory,
-    fontFamily: 'Montserrat',
   },
   minimalTopBar: {
     flexDirection: 'row',
@@ -18,15 +17,13 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.ivory,
   },
   brandName: {
-    fontFamily: 'Cormorant Garamond',
-    fontWeight: 600,
+    fontFamily: 'Helvetica-Bold',
     fontSize: 11,
     letterSpacing: 2,
     color: COLORS.brown,
   },
   pageLabel: {
-    fontFamily: 'Montserrat',
-    fontWeight: 400,
+    fontFamily: 'Helvetica',
     fontSize: 7,
     color: COLORS.brownMuted,
     letterSpacing: 0.5,
@@ -35,7 +32,6 @@ const styles = StyleSheet.create({
     height: 0.75,
     backgroundColor: COLORS.gold,
     marginHorizontal: 36,
-    marginBottom: 0,
   },
   contentArea: {
     flex: 1,
@@ -66,9 +62,7 @@ export default function LetterheadContinuationPage({
       </View>
       <View style={styles.thinGoldLine} />
       {watermarkEnabled && <Watermark />}
-      <View style={styles.contentArea}>
-        {children}
-      </View>
+      <View style={styles.contentArea}>{children}</View>
       <Footer showPageNumber pageNumber={pageNumber} totalPages={totalPages} />
     </Page>
   )

@@ -30,15 +30,13 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.ivory,
   },
   contactItem: {
-    fontFamily: 'Montserrat',
-    fontWeight: 400,
+    fontFamily: 'Helvetica',
     fontSize: 7,
     color: COLORS.brownMuted,
     letterSpacing: 0.3,
   },
   centerText: {
-    fontFamily: 'Montserrat',
-    fontWeight: 600,
+    fontFamily: 'Helvetica-Bold',
     fontSize: 6.5,
     color: COLORS.gold,
     letterSpacing: 1,
@@ -60,9 +58,7 @@ export default function Footer({ pageNumber, totalPages, showPageNumber = false 
       <View style={styles.container}>
         <Text style={styles.contactItem}>{CONTACT.phone}</Text>
         {showPageNumber && pageNumber != null && totalPages != null ? (
-          <Text style={styles.centerText}>
-            {pageNumber} / {totalPages}
-          </Text>
+          <Text style={styles.centerText}>{pageNumber} / {totalPages}</Text>
         ) : (
           <Text style={styles.centerText}>SRI VAISHNAV CONSTRUCTIONS</Text>
         )}

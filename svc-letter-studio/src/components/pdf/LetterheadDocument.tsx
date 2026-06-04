@@ -2,14 +2,12 @@ import { Document, Text, StyleSheet } from '@react-pdf/renderer'
 import '../../pdf/fonts'
 import { DEFAULT_SIGNATORY, DEFAULT_PDF_SETTINGS } from '../../constants/defaults'
 import LetterheadFirstPage from './LetterheadFirstPage'
-import LetterheadContinuationPage from './LetterheadContinuationPage'
 import Signatory from './Signatory'
 import { COLORS } from '../../constants/brand'
 
 const bodyStyle = StyleSheet.create({
   body: {
-    fontFamily: 'Montserrat',
-    fontWeight: 400,
+    fontFamily: 'Helvetica',
     fontSize: 9.5,
     color: COLORS.brown,
     lineHeight: 1.65,
@@ -18,7 +16,7 @@ const bodyStyle = StyleSheet.create({
 })
 
 interface LetterheadDocumentProps {
-  content?: string          // plain text or multi-line string
+  content?: string
   watermarkEnabled?: boolean
   signatoryName?: string
   signatoryDesignation?: string
@@ -32,8 +30,6 @@ export default function LetterheadDocument({
   signatoryDesignation = DEFAULT_SIGNATORY.designation,
   showSignatory = true,
 }: LetterheadDocumentProps) {
-  // For Phase 2, content renders on a single first page.
-  // Multi-page splitting will be handled in Phase 6 once real draft content arrives.
   return (
     <Document
       title="Sri Vaishnav Constructions — Letter"
@@ -46,10 +42,7 @@ export default function LetterheadDocument({
           <Text style={bodyStyle.body}>{content}</Text>
         ) : null}
         {showSignatory && (
-          <Signatory
-            name={signatoryName}
-            designation={signatoryDesignation}
-          />
+          <Signatory name={signatoryName} designation={signatoryDesignation} />
         )}
       </LetterheadFirstPage>
     </Document>

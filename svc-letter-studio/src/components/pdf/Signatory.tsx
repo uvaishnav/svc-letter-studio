@@ -17,8 +17,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   name: {
-    fontFamily: 'Montserrat',
-    fontWeight: 700,
+    fontFamily: 'Helvetica-Bold',
     fontSize: 8,
     color: COLORS.brown,
     letterSpacing: 0.5,
@@ -26,8 +25,7 @@ const styles = StyleSheet.create({
     width: 140,
   },
   designation: {
-    fontFamily: 'Montserrat',
-    fontWeight: 400,
+    fontFamily: 'Helvetica',
     fontSize: 7,
     color: COLORS.brownMuted,
     letterSpacing: 0.3,
@@ -36,15 +34,13 @@ const styles = StyleSheet.create({
     marginTop: 1,
   },
   stamp: {
-    fontFamily: 'Montserrat',
-    fontWeight: 400,
+    fontFamily: 'Helvetica-Oblique',
     fontSize: 6.5,
     color: COLORS.gold,
     letterSpacing: 0.8,
     textAlign: 'center',
     width: 140,
     marginTop: 4,
-    fontStyle: 'italic',
   },
 })
 

@@ -6,6 +6,13 @@ import {
   BRAND_TAGLINE,
 } from '../../constants/brand'
 
+// Logo must be an absolute URL so @react-pdf/renderer can fetch it via XHR.
+// window.location.origin resolves correctly in both dev (localhost:5173) and prod.
+const getLogoUrl = () =>
+  typeof window !== 'undefined'
+    ? `${window.location.origin}/logo/logo.png`
+    : '/logo/logo.png'
+
 const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
@@ -25,42 +32,36 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   brandPrimary: {
-    fontFamily: 'Cormorant Garamond',
-    fontWeight: 600,
-    fontSize: 20,
+    fontFamily: 'Helvetica-Bold',
+    fontSize: 18,
     letterSpacing: 2.5,
     color: COLORS.brown,
     lineHeight: 1.1,
   },
   brandSecondary: {
-    fontFamily: 'Montserrat',
-    fontWeight: 700,
-    fontSize: 9,
+    fontFamily: 'Helvetica-Bold',
+    fontSize: 8,
     letterSpacing: 3,
     color: COLORS.brownLight,
-    marginTop: 1,
+    marginTop: 2,
   },
   tagline: {
-    fontFamily: 'Montserrat',
-    fontWeight: 400,
+    fontFamily: 'Helvetica-Oblique',
     fontSize: 7,
-    letterSpacing: 0.8,
+    letterSpacing: 0.5,
     color: COLORS.brownMuted,
     marginTop: 4,
-    fontStyle: 'italic',
   },
   goldDivider: {
     height: 1,
     backgroundColor: COLORS.gold,
     marginHorizontal: 36,
-    marginBottom: 0,
   },
   goldAccentBar: {
     height: 0.5,
     backgroundColor: COLORS.goldLight,
     marginHorizontal: 36,
     marginTop: 2,
-    marginBottom: 0,
   },
 })
 
@@ -68,10 +69,7 @@ export default function Header() {
   return (
     <>
       <View style={styles.container}>
-        <Image
-          src="/logo/logo.png"
-          style={styles.logo}
-        />
+        <Image src={getLogoUrl()} style={styles.logo} />
         <View style={styles.textBlock}>
           <Text style={styles.brandPrimary}>{BRAND_NAME_PRIMARY}</Text>
           <Text style={styles.brandSecondary}>{BRAND_NAME_SECONDARY}</Text>
