@@ -13,9 +13,9 @@ const S = StyleSheet.create({
     alignItems: 'center',
   },
   logo: {
-    width: 260,
-    height: 260,
-    opacity: 0.035,
+    width: 220,
+    height: 220,
+    opacity: 0.032,
   },
 })
 

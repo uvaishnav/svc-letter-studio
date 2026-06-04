@@ -8,17 +8,25 @@ const S = StyleSheet.create({
     left: 0,
     right: 0,
   },
-  goldTopBar: {
-    height: 2,
+  ruleGold: {
+    height: 0.75,
     backgroundColor: COLORS.gold,
+    marginHorizontal: 30,
+    opacity: 0.7,
+  },
+  ruleShadow: {
+    height: 0.3,
+    backgroundColor: COLORS.brown,
+    marginHorizontal: 30,
+    marginBottom: 6,
+    opacity: 0.07,
   },
   container: {
-    backgroundColor: COLORS.brown,
-    paddingHorizontal: 32,
-    paddingTop: 8,
+    backgroundColor: COLORS.ivory,
+    paddingHorizontal: 30,
     paddingBottom: 14,
     flexDirection: 'column',
-    gap: 4,
+    gap: 3,
   },
   topRow: {
     flexDirection: 'row',
@@ -30,45 +38,64 @@ const S = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     gap: 4,
-    marginTop: 2,
+    marginTop: 1,
   },
   contactItem: {
     fontFamily: 'Montserrat',
     fontWeight: 400,
-    fontSize: 7,
-    color: COLORS.goldLight,
+    fontSize: 6.5,
+    color: COLORS.brownMuted,
     letterSpacing: 0.3,
   },
-  centerBrand: {
+  gstinLabel: {
     fontFamily: 'Montserrat',
-    fontWeight: 600,
+    fontWeight: 700,
     fontSize: 6.5,
-    color: COLORS.gold,
-    letterSpacing: 2,
-    textAlign: 'center',
+    color: COLORS.brown,
+    letterSpacing: 0.5,
   },
-  address: {
+  gstinValue: {
     fontFamily: 'Montserrat',
     fontWeight: 400,
     fontSize: 6.5,
-    color: COLORS.ivoryDark,
+    color: COLORS.brownMuted,
     letterSpacing: 0.3,
-    textAlign: 'center',
-    opacity: 0.7,
+  },
+  gstinRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
   },
   dot: {
     fontFamily: 'Montserrat',
     fontWeight: 400,
     fontSize: 6,
     color: COLORS.gold,
-    opacity: 0.6,
+    opacity: 0.7,
+  },
+  address: {
+    fontFamily: 'Montserrat',
+    fontWeight: 400,
+    fontSize: 6,
+    color: COLORS.brownMuted,
+    letterSpacing: 0.2,
+    textAlign: 'center',
+    opacity: 0.75,
   },
   pageNum: {
     fontFamily: 'Montserrat',
     fontWeight: 400,
-    fontSize: 7,
-    color: COLORS.goldLight,
+    fontSize: 6.5,
+    color: COLORS.brownMuted,
     letterSpacing: 0.3,
+  },
+  leftAccent: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    width: 2.5,
+    backgroundColor: COLORS.gold,
   },
 })
 
@@ -81,21 +108,25 @@ interface FooterProps {
 export default function Footer({ pageNumber, totalPages, showPageNumber = false }: FooterProps) {
   return (
     <View style={S.wrapper} fixed>
-      <View style={S.goldTopBar} />
+      <View style={S.leftAccent} />
+      <View style={S.ruleGold} />
+      <View style={S.ruleShadow} />
       <View style={S.container}>
         <View style={S.topRow}>
-          <Text style={S.contactItem}>{CONTACT.phone}</Text>
-          {showPageNumber && pageNumber != null
-            ? <Text style={S.pageNum}>{pageNumber} / {totalPages}</Text>
-            : <Text style={S.centerBrand}>SRI VAISHNAV CONSTRUCTIONS</Text>
-          }
-          <Text style={S.contactItem}>{CONTACT.email}</Text>
+          <Text style={S.contactItem}>☎  {CONTACT.phone}</Text>
+          {CONTACT.gstin ? (
+            <View style={S.gstinRow}>
+              <Text style={S.gstinLabel}>GSTIN</Text>
+              <Text style={S.dot}>:</Text>
+              <Text style={S.gstinValue}>{CONTACT.gstin}</Text>
+            </View>
+          ) : showPageNumber && pageNumber != null ? (
+            <Text style={S.pageNum}>{pageNumber} / {totalPages}</Text>
+          ) : null}
+          <Text style={S.contactItem}>✉  {CONTACT.email}</Text>
         </View>
         <View style={S.bottomRow}>
           <Text style={S.address}>{CONTACT.address}</Text>
-          {CONTACT.gstin ? (
-            <><Text style={S.dot}>•</Text><Text style={S.address}>GSTIN: {CONTACT.gstin}</Text></>
-          ) : null}
         </View>
       </View>
     </View>

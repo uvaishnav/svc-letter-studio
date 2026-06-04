@@ -10,10 +10,10 @@ const S = StyleSheet.create({
   },
   contentArea: {
     flex: 1,
-    marginHorizontal: 40,
-    marginTop: 24,
-    // Footer is ~70pt tall (absolute positioned)
-    marginBottom: 75,
+    marginLeft: 36,
+    marginRight: 36,
+    marginTop: 20,
+    marginBottom: 65,
   },
 })
 
