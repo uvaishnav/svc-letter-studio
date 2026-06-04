@@ -1,46 +1,60 @@
 import { View, Text, StyleSheet } from '@react-pdf/renderer'
 import { COLORS } from '../../constants/brand'
 
-const styles = StyleSheet.create({
+const S = StyleSheet.create({
   container: {
-    marginTop: 40,
-    marginHorizontal: 36,
+    marginTop: 48,
+    marginHorizontal: 32,
     alignItems: 'flex-end',
   },
-  signatureSpace: {
-    height: 40,
+  signatureBox: {
+    alignItems: 'center',
+    width: 160,
   },
-  line: {
-    width: 140,
-    height: 0.75,
-    backgroundColor: COLORS.brownMuted,
+  signatureSpace: {
+    height: 44,
+    width: 160,
+    borderBottomWidth: 0.75,
+    borderBottomColor: COLORS.brownMuted,
+    borderBottomStyle: 'solid',
+    marginBottom: 5,
+  },
+  stampBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
     marginBottom: 4,
   },
+  stampLine: {
+    height: 0.5,
+    width: 20,
+    backgroundColor: COLORS.gold,
+  },
+  stamp: {
+    fontFamily: 'Montserrat',
+    fontWeight: 400,
+    fontStyle: 'italic',
+    fontSize: 6,
+    color: COLORS.gold,
+    letterSpacing: 0.8,
+  },
   name: {
-    fontFamily: 'Helvetica-Bold',
+    fontFamily: 'Montserrat',
+    fontWeight: 700,
     fontSize: 8,
     color: COLORS.brown,
-    letterSpacing: 0.5,
+    letterSpacing: 1,
     textAlign: 'center',
-    width: 140,
+    textTransform: 'uppercase',
   },
   designation: {
-    fontFamily: 'Helvetica',
+    fontFamily: 'Montserrat',
+    fontWeight: 400,
     fontSize: 7,
     color: COLORS.brownMuted,
     letterSpacing: 0.3,
     textAlign: 'center',
-    width: 140,
-    marginTop: 1,
-  },
-  stamp: {
-    fontFamily: 'Helvetica-Oblique',
-    fontSize: 6.5,
-    color: COLORS.gold,
-    letterSpacing: 0.8,
-    textAlign: 'center',
-    width: 140,
-    marginTop: 4,
+    marginTop: 2,
   },
 })
 
@@ -51,12 +65,17 @@ interface SignatoryProps {
 
 export default function Signatory({ name, designation }: SignatoryProps) {
   return (
-    <View style={styles.container}>
-      <View style={styles.signatureSpace} />
-      <View style={styles.line} />
-      <Text style={styles.name}>{name}</Text>
-      <Text style={styles.designation}>{designation}</Text>
-      <Text style={styles.stamp}>Sri Vaishnav Constructions</Text>
+    <View style={S.container}>
+      <View style={S.signatureBox}>
+        <View style={S.signatureSpace} />
+        <View style={S.stampBadge}>
+          <View style={S.stampLine} />
+          <Text style={S.stamp}>Sri Vaishnav Constructions</Text>
+          <View style={S.stampLine} />
+        </View>
+        <Text style={S.name}>{name}</Text>
+        <Text style={S.designation}>{designation}</Text>
+      </View>
     </View>
   )
 }

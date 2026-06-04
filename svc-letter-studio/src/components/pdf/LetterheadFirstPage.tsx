@@ -4,17 +4,16 @@ import Header from './Header'
 import Footer from './Footer'
 import Watermark from './Watermark'
 
-const styles = StyleSheet.create({
+const S = StyleSheet.create({
   page: {
-    // Do NOT set fontFamily here — 'Montserrat' is not registered in @react-pdf/renderer.
-    // Each component sets its own fontFamily using PDFKit built-ins (Helvetica, etc).
     backgroundColor: COLORS.ivory,
   },
   contentArea: {
     flex: 1,
-    marginHorizontal: 36,
-    marginTop: 20,
-    marginBottom: 72,
+    marginHorizontal: 40,
+    marginTop: 24,
+    // Footer is ~70pt tall (absolute positioned)
+    marginBottom: 75,
   },
 })
 
@@ -25,10 +24,10 @@ interface Props {
 
 export default function LetterheadFirstPage({ watermarkEnabled = true, children }: Props) {
   return (
-    <Page size="A4" style={styles.page}>
+    <Page size="A4" style={S.page}>
       <Header />
       {watermarkEnabled && <Watermark />}
-      <View style={styles.contentArea}>
+      <View style={S.contentArea}>
         {children}
       </View>
       <Footer />

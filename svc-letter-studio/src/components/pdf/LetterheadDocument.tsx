@@ -5,17 +5,18 @@ import LetterheadFirstPage from './LetterheadFirstPage'
 import Signatory from './Signatory'
 import { COLORS } from '../../constants/brand'
 
-const bodyStyle = StyleSheet.create({
+const S = StyleSheet.create({
   body: {
-    fontFamily: 'Helvetica',
+    fontFamily: 'Montserrat',
+    fontWeight: 400,
     fontSize: 9.5,
     color: COLORS.brown,
-    lineHeight: 1.65,
-    letterSpacing: 0.2,
+    lineHeight: 1.7,
+    letterSpacing: 0.15,
   },
 })
 
-interface LetterheadDocumentProps {
+interface Props {
   content?: string
   watermarkEnabled?: boolean
   signatoryName?: string
@@ -29,7 +30,7 @@ export default function LetterheadDocument({
   signatoryName = DEFAULT_SIGNATORY.name,
   signatoryDesignation = DEFAULT_SIGNATORY.designation,
   showSignatory = true,
-}: LetterheadDocumentProps) {
+}: Props) {
   return (
     <Document
       title="Sri Vaishnav Constructions — Letter"
@@ -38,9 +39,7 @@ export default function LetterheadDocument({
       producer="SVC Letter Studio"
     >
       <LetterheadFirstPage watermarkEnabled={watermarkEnabled}>
-        {content ? (
-          <Text style={bodyStyle.body}>{content}</Text>
-        ) : null}
+        {content ? <Text style={S.body}>{content}</Text> : null}
         {showSignatory && (
           <Signatory name={signatoryName} designation={signatoryDesignation} />
         )}

@@ -6,78 +6,92 @@ import {
   BRAND_TAGLINE,
 } from '../../constants/brand'
 
-// Logo must be an absolute URL so @react-pdf/renderer can fetch it via XHR.
-// window.location.origin resolves correctly in both dev (localhost:5173) and prod.
-const getLogoUrl = () =>
-  typeof window !== 'undefined'
-    ? `${window.location.origin}/logo/logo.png`
-    : '/logo/logo.png'
+const base = typeof window !== 'undefined' ? window.location.origin : ''
 
-const styles = StyleSheet.create({
-  container: {
+const S = StyleSheet.create({
+  // Thin gold top edge bar — premium accent
+  topEdge: {
+    height: 3,
+    backgroundColor: COLORS.gold,
+  },
+  // Dark brown band — primary brand identity area
+  band: {
+    backgroundColor: COLORS.brown,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 36,
-    paddingTop: 28,
-    paddingBottom: 16,
-    backgroundColor: COLORS.ivory,
+    paddingHorizontal: 32,
+    paddingVertical: 18,
   },
   logo: {
-    width: 52,
-    height: 52,
-    marginRight: 14,
+    width: 48,
+    height: 48,
+    marginRight: 16,
   },
   textBlock: {
     flexDirection: 'column',
     justifyContent: 'center',
+    flex: 1,
   },
   brandPrimary: {
-    fontFamily: 'Helvetica-Bold',
-    fontSize: 18,
-    letterSpacing: 2.5,
-    color: COLORS.brown,
-    lineHeight: 1.1,
+    fontFamily: 'Cormorant Garamond',
+    fontWeight: 600,
+    fontSize: 22,
+    letterSpacing: 3,
+    color: COLORS.ivory,
+    lineHeight: 1,
+  },
+  brandRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 3,
+    gap: 6,
+  },
+  goldLine: {
+    width: 18,
+    height: 0.75,
+    backgroundColor: COLORS.gold,
   },
   brandSecondary: {
-    fontFamily: 'Helvetica-Bold',
-    fontSize: 8,
-    letterSpacing: 3,
-    color: COLORS.brownLight,
-    marginTop: 2,
+    fontFamily: 'Montserrat',
+    fontWeight: 600,
+    fontSize: 7.5,
+    letterSpacing: 3.5,
+    color: COLORS.gold,
   },
   tagline: {
-    fontFamily: 'Helvetica-Oblique',
-    fontSize: 7,
+    fontFamily: 'Montserrat',
+    fontWeight: 400,
+    fontStyle: 'italic',
+    fontSize: 6.5,
     letterSpacing: 0.5,
-    color: COLORS.brownMuted,
-    marginTop: 4,
+    color: COLORS.goldLight,
+    marginTop: 5,
   },
-  goldDivider: {
+  // Thin ivory bottom edge of band
+  bandEdge: {
     height: 1,
-    backgroundColor: COLORS.gold,
-    marginHorizontal: 36,
-  },
-  goldAccentBar: {
-    height: 0.5,
-    backgroundColor: COLORS.goldLight,
-    marginHorizontal: 36,
-    marginTop: 2,
+    backgroundColor: COLORS.goldDark,
+    marginHorizontal: 32,
   },
 })
 
 export default function Header() {
   return (
     <>
-      <View style={styles.container}>
-        <Image src={getLogoUrl()} style={styles.logo} />
-        <View style={styles.textBlock}>
-          <Text style={styles.brandPrimary}>{BRAND_NAME_PRIMARY}</Text>
-          <Text style={styles.brandSecondary}>{BRAND_NAME_SECONDARY}</Text>
-          <Text style={styles.tagline}>{BRAND_TAGLINE}</Text>
+      <View style={S.topEdge} />
+      <View style={S.band}>
+        <Image src={`${base}/logo/logo.png`} style={S.logo} />
+        <View style={S.textBlock}>
+          <Text style={S.brandPrimary}>{BRAND_NAME_PRIMARY}</Text>
+          <View style={S.brandRow}>
+            <View style={S.goldLine} />
+            <Text style={S.brandSecondary}>{BRAND_NAME_SECONDARY}</Text>
+            <View style={S.goldLine} />
+          </View>
+          <Text style={S.tagline}>{BRAND_TAGLINE}</Text>
         </View>
       </View>
-      <View style={styles.goldDivider} />
-      <View style={styles.goldAccentBar} />
+      <View style={S.bandEdge} />
     </>
   )
 }

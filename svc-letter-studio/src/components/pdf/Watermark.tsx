@@ -1,11 +1,8 @@
 import { View, Image, StyleSheet } from '@react-pdf/renderer'
 
-const getLogoUrl = () =>
-  typeof window !== 'undefined'
-    ? `${window.location.origin}/logo/logo.png`
-    : '/logo/logo.png'
+const base = typeof window !== 'undefined' ? window.location.origin : ''
 
-const styles = StyleSheet.create({
+const S = StyleSheet.create({
   container: {
     position: 'absolute',
     top: 0,
@@ -16,16 +13,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   logo: {
-    width: 240,
-    height: 240,
-    opacity: 0.04,
+    width: 260,
+    height: 260,
+    opacity: 0.035,
   },
 })
 
 export default function Watermark() {
   return (
-    <View style={styles.container} fixed>
-      <Image src={getLogoUrl()} style={styles.logo} />
+    <View style={S.container} fixed>
+      <Image src={`${base}/logo/logo.png`} style={S.logo} />
     </View>
   )
 }

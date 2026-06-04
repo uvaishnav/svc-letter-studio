@@ -1,20 +1,35 @@
-// Font strategy for @react-pdf/renderer:
-// PDFKit has Helvetica, Times-Roman, Courier built-in — no network fetch needed.
-// We map our brand font families to these built-ins so PDF generation never
-// fails due to CDN fetch errors.
+// Font registration for @react-pdf/renderer
 //
-// When real custom fonts are needed in a future phase, host the .ttf files
-// inside /public/fonts/ and use absolute URLs: window.location.origin + '/fonts/x.ttf'
-// DO NOT use Google Fonts CDN — those are woff2 and require CORS-safe fetch.
+// Fonts are self-hosted in /public/fonts/ to avoid CDN instability.
+// @react-pdf/renderer fetches fonts via XHR so URLs must be absolute.
+// We use window.location.origin to resolve correctly in dev and prod.
+//
+// REQUIRED FILES (see docs/FONTS.md for download instructions):
+//   public/fonts/CormorantGaramond-SemiBold.ttf
+//   public/fonts/Montserrat-Regular.ttf
+//   public/fonts/Montserrat-SemiBold.ttf
+//   public/fonts/Montserrat-Bold.ttf
+//   public/fonts/Montserrat-Italic.ttf
 
 import { Font } from '@react-pdf/renderer'
 
-// No Font.register calls needed — we use built-in font names directly in StyleSheet:
-// 'Helvetica-Bold'  → brand headings (replaces Cormorant Garamond)
-// 'Helvetica'       → body text (replaces Montserrat regular)
-// 'Helvetica-Bold'  → semi-bold/bold labels
-//
-// These are referenced by exact name in each component's StyleSheet.
+const base = typeof window !== 'undefined' ? window.location.origin : ''
 
-// Prevent hyphenation globally
+Font.register({
+  family: 'Cormorant Garamond',
+  fonts: [
+    { src: `${base}/fonts/CormorantGaramond-SemiBold.ttf`, fontWeight: 600 },
+  ],
+})
+
+Font.register({
+  family: 'Montserrat',
+  fonts: [
+    { src: `${base}/fonts/Montserrat-Regular.ttf`,  fontWeight: 400 },
+    { src: `${base}/fonts/Montserrat-Italic.ttf`,   fontWeight: 400, fontStyle: 'italic' },
+    { src: `${base}/fonts/Montserrat-SemiBold.ttf`, fontWeight: 600 },
+    { src: `${base}/fonts/Montserrat-Bold.ttf`,     fontWeight: 700 },
+  ],
+})
+
 Font.registerHyphenationCallback(word => [word])
