@@ -12,9 +12,8 @@ Download and place these exact files in `svc-letter-studio/public/fonts/`:
 
 | File | Source | Weight |
 |------|--------|--------|
-| `Cinzel-Regular.ttf` | [Download](https://fonts.google.com/specimen/Cinzel) | 400 |
-| `Cinzel-Bold.ttf` | [Download](https://fonts.google.com/specimen/Cinzel) | 700 |
-| `CormorantGaramond-SemiBold.ttf` | [Download](https://fonts.google.com/specimen/Cormorant+Garamond) | 600 |
+| `PlayfairDisplay-Regular.ttf` | [Download](https://fonts.google.com/specimen/Playfair+Display) | 400 |
+| `PlayfairDisplay-Bold.ttf` | [Download](https://fonts.google.com/specimen/Playfair+Display) | 700 |
 | `Montserrat-Regular.ttf` | [Download](https://fonts.google.com/specimen/Montserrat) | 400 |
 | `Montserrat-Italic.ttf` | [Download](https://fonts.google.com/specimen/Montserrat) | 400 italic |
 | `Montserrat-SemiBold.ttf` | [Download](https://fonts.google.com/specimen/Montserrat) | 600 |
@@ -22,38 +21,34 @@ Download and place these exact files in `svc-letter-studio/public/fonts/`:
 
 ## Step-by-step
 
-1. **Cinzel** (brand display font for "SRI VAISHNAV")
-   - Go to https://fonts.google.com/specimen/Cinzel
+1. **Playfair Display** (brand name — "SRI VAISHNAV")
+   - Go to https://fonts.google.com/specimen/Playfair+Display
    - Click **Download family** (top right)
-   - Unzip → find `static/Cinzel-Regular.ttf` and `static/Cinzel-Bold.ttf`
-   - Copy both to `svc-letter-studio/public/fonts/`
+   - Unzip → go to `static/` folder
+   - Copy `PlayfairDisplay-Regular.ttf` and `PlayfairDisplay-Bold.ttf` to `svc-letter-studio/public/fonts/`
 
-2. **Cormorant Garamond** (fallback serif)
-   - Go to https://fonts.google.com/specimen/Cormorant+Garamond
-   - Click **Download family**
-   - Unzip → find `static/CormorantGaramond-SemiBold.ttf`
-   - Copy to `svc-letter-studio/public/fonts/`
-
-3. **Montserrat** (all UI and body text)
+2. **Montserrat** (all supporting text)
    - Go to https://fonts.google.com/specimen/Montserrat
    - Click **Download family**
-   - Unzip → find `static/` folder
-   - Copy these files to `svc-letter-studio/public/fonts/`:
+   - Unzip → go to `static/` folder
+   - Copy these to `svc-letter-studio/public/fonts/`:
      - `Montserrat-Regular.ttf`
      - `Montserrat-Italic.ttf`
      - `Montserrat-SemiBold.ttf`
      - `Montserrat-Bold.ttf`
 
-4. Restart `npm run dev` (Vite needs to pick up new public assets)
+3. **Remove old Cinzel and Cormorant Garamond files** if present — they are no longer used.
+
+4. Restart `npm run dev`
 
 ## Verification
 
 After adding fonts, open the app → Preview screen.
 The PDF should render with:
-- `SRI VAISHNAV` in Cinzel Bold (Roman all-caps display serif — impactful, classic)
+- `SRI VAISHNAV` in Playfair Display Bold (heavy serif, thick strokes, elegant)
 - `CONSTRUCTIONS` in Montserrat SemiBold gold
-- Tagline in Montserrat Regular muted
+- Tagline in Montserrat Regular muted brown
 - All body text in Montserrat
 
 If fonts fail to load, the PDF will show a `Font family not registered` error
-in the Preview screen error panel (not just the console).
+in the Preview screen error panel.

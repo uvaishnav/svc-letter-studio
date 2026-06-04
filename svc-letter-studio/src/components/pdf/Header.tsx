@@ -14,7 +14,6 @@ const S = StyleSheet.create({
     backgroundColor: COLORS.ivory,
   },
 
-  // Logo + text side by side, page margin on both sides
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -23,63 +22,62 @@ const S = StyleSheet.create({
     paddingBottom: 12,
   },
 
-  // Logo — 20% larger than before (64 → 77)
   logo: {
-    width: 77,
-    height: 77,
-    marginRight: 14,
+    width: 80,
+    height: 80,
+    marginRight: 0,
   },
 
-  // Text column: flex-column, center-aligned, tight spacing
+  // Tight unified text block — all 3 rows centered as one structure
   textBlock: {
     flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
   },
 
-  // "SRI VAISHNAV" — Cinzel Bold, large, dark brown
+  // "SRI VAISHNAV" — Playfair Display Bold, heavy, tight spacing
   brandPrimary: {
-    fontFamily: 'Cinzel',
+    fontFamily: 'Playfair Display',
     fontWeight: 700,
-    fontSize: 24,
-    letterSpacing: 3,
+    fontSize: 28,
+    letterSpacing: 1,
     color: COLORS.brown,
     lineHeight: 1,
   },
 
-  // "— CONSTRUCTIONS —" row
+  // "— CONSTRUCTIONS —"
   brandRow: {
     flexDirection: 'row',
     alignItems: 'center',
     marginTop: 1,
-    gap: 4,
+    gap: 5,
   },
 
   dashLine: {
     height: 0.75,
-    width: 16,
+    width: 20,
     backgroundColor: COLORS.gold,
   },
 
   brandSecondary: {
     fontFamily: 'Montserrat',
     fontWeight: 600,
-    fontSize: 7,
-    letterSpacing: 4,
+    fontSize: 7.5,
+    letterSpacing: 3.5,
     color: COLORS.gold,
   },
 
-  // Tagline — tight gap above
+  // "ENGINEERING • INFRASTRUCTURE • CIVIL WORKS"
   tagline: {
     fontFamily: 'Montserrat',
     fontWeight: 400,
     fontSize: 5.5,
-    letterSpacing: 1.2,
+    letterSpacing: 1.5,
     color: COLORS.brownMuted,
     marginTop: 2,
   },
 
-  // Full-width gold hairline rule, flush to page edges
+  // Full-width gold hairline rule
   rule: {
     height: 0.75,
     backgroundColor: COLORS.gold,
