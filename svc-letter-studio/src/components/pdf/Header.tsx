@@ -49,20 +49,20 @@ const S = StyleSheet.create({
   brandRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 1,
+    marginTop: 5,
     gap: 5,
   },
 
   dashLine: {
-    height: 0.75,
-    width: 20,
+    height: 1,
+    width: 25,
     backgroundColor: COLORS.gold,
   },
 
   brandSecondary: {
     fontFamily: 'Montserrat',
-    fontWeight: 600,
-    fontSize: 7.5,
+    fontWeight: 800,
+    fontSize: 10,
     letterSpacing: 3.5,
     color: COLORS.gold,
   },
@@ -70,9 +70,9 @@ const S = StyleSheet.create({
   // "ENGINEERING • INFRASTRUCTURE • CIVIL WORKS"
   tagline: {
     fontFamily: 'Montserrat',
-    fontWeight: 400,
+    fontWeight: 600,
     fontSize: 5.5,
-    letterSpacing: 1.5,
+    letterSpacing: 1,
     color: COLORS.brownMuted,
     marginTop: 2,
   },
@@ -81,6 +81,7 @@ const S = StyleSheet.create({
   rule: {
     height: 0.75,
     backgroundColor: COLORS.gold,
+    marginHorizontal: 30,
     opacity: 0.85,
   },
 })
