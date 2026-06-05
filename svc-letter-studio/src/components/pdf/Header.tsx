@@ -28,14 +28,13 @@ const S = StyleSheet.create({
     marginRight: 0,
   },
 
-  // Tight unified text block — all 3 rows centered as one structure
   textBlock: {
     flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
   },
 
-  // "SRI VAISHNAV" — Playfair Display Bold, heavy, tight spacing
+  // "SRI VAISHNAV" — Playfair Display SC Bold
   brandPrimary: {
     fontFamily: 'Playfair Display SC',
     fontWeight: 700,
@@ -45,7 +44,6 @@ const S = StyleSheet.create({
     lineHeight: 1,
   },
 
-  // "— CONSTRUCTIONS —"
   brandRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -67,7 +65,6 @@ const S = StyleSheet.create({
     color: COLORS.gold,
   },
 
-  // "ENGINEERING • INFRASTRUCTURE • CIVIL WORKS"
   tagline: {
     fontFamily: 'Montserrat',
     fontWeight: 600,
@@ -77,7 +74,6 @@ const S = StyleSheet.create({
     marginTop: 2,
   },
 
-  // Full-width gold hairline rule
   rule: {
     height: 0.75,
     backgroundColor: COLORS.gold,
