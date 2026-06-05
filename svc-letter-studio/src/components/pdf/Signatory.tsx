@@ -68,11 +68,6 @@ export default function Signatory({ name, designation }: SignatoryProps) {
     <View style={S.container}>
       <View style={S.signatureBox}>
         <View style={S.signatureSpace} />
-        <View style={S.stampBadge}>
-          <View style={S.stampLine} />
-          <Text style={S.stamp}>Sri Vaishnav Constructions</Text>
-          <View style={S.stampLine} />
-        </View>
         <Text style={S.name}>{name}</Text>
         <Text style={S.designation}>{designation}</Text>
       </View>

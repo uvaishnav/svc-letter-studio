@@ -1,7 +1,7 @@
 import { View, Text, Image, StyleSheet } from '@react-pdf/renderer'
 import {
   COLORS,
-  BRAND_NAME_PRIMARY,
+  BRAND_NAME_PRIMARY_HEADER,
   BRAND_NAME_SECONDARY,
   BRAND_TAGLINE,
 } from '../../constants/brand'
@@ -88,7 +88,7 @@ export default function Header() {
       <View style={S.headerRow}>
         <Image src={`${base}/logo/logo.png`} style={S.logo} />
         <View style={S.textBlock}>
-          <Text style={S.brandPrimary}>{BRAND_NAME_PRIMARY}</Text>
+          <Text style={S.brandPrimary}>{BRAND_NAME_PRIMARY_HEADER}</Text>
           <View style={S.brandRow}>
             <View style={S.dashLine} />
             <Text style={S.brandSecondary}>{BRAND_NAME_SECONDARY}</Text>

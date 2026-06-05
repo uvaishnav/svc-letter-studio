@@ -1,6 +1,10 @@
 import { View, Text, StyleSheet } from '@react-pdf/renderer'
 import { COLORS, CONTACT } from '../../constants/brand'
 
+const FOOTER_FONT_WEIGHT = 600
+const FOOTER_FONT_SIZE = 7
+const FOOTER_FONT_COLOR = COLORS.brown
+
 const S = StyleSheet.create({
   wrapper: {
     position: 'absolute',
@@ -42,23 +46,23 @@ const S = StyleSheet.create({
   },
   contactItem: {
     fontFamily: 'Montserrat',
-    fontWeight: 400,
-    fontSize: 6.5,
-    color: COLORS.brownMuted,
+    fontWeight: FOOTER_FONT_WEIGHT,
+    fontSize: FOOTER_FONT_SIZE,
+    color: FOOTER_FONT_COLOR,
     letterSpacing: 0.3,
   },
   gstinLabel: {
     fontFamily: 'Montserrat',
-    fontWeight: 700,
-    fontSize: 6.5,
+    fontWeight: FOOTER_FONT_WEIGHT,
+    fontSize: FOOTER_FONT_SIZE,
     color: COLORS.brown,
     letterSpacing: 0.5,
   },
   gstinValue: {
     fontFamily: 'Montserrat',
-    fontWeight: 400,
-    fontSize: 6.5,
-    color: COLORS.brownMuted,
+    fontWeight: FOOTER_FONT_WEIGHT,
+    fontSize: FOOTER_FONT_SIZE,
+    color: FOOTER_FONT_COLOR,
     letterSpacing: 0.3,
   },
   gstinRow: {
@@ -68,25 +72,25 @@ const S = StyleSheet.create({
   },
   dot: {
     fontFamily: 'Montserrat',
-    fontWeight: 400,
-    fontSize: 6,
+    fontWeight: FOOTER_FONT_WEIGHT,
+    fontSize: FOOTER_FONT_SIZE,
     color: COLORS.gold,
     opacity: 0.7,
   },
   address: {
     fontFamily: 'Montserrat',
-    fontWeight: 400,
-    fontSize: 6,
-    color: COLORS.brownMuted,
+    fontWeight: FOOTER_FONT_WEIGHT,
+    fontSize: FOOTER_FONT_SIZE,
+    color: FOOTER_FONT_COLOR,
     letterSpacing: 0.2,
     textAlign: 'center',
     opacity: 0.75,
   },
   pageNum: {
     fontFamily: 'Montserrat',
-    fontWeight: 400,
-    fontSize: 6.5,
-    color: COLORS.brownMuted,
+    fontWeight: FOOTER_FONT_WEIGHT,
+    fontSize: FOOTER_FONT_SIZE,
+    color: FOOTER_FONT_COLOR,
     letterSpacing: 0.3,
   },
   leftAccent: {

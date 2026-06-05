@@ -16,6 +16,7 @@ export const FONTS = {
 } as const
 
 export const BRAND_NAME_PRIMARY   = 'SRI VAISHNAV'
+export const BRAND_NAME_PRIMARY_HEADER = 'Sri Vaishnav'
 export const BRAND_NAME_SECONDARY = 'CONSTRUCTIONS'
 export const BRAND_TAGLINE        = 'ENGINEERING  •  INFRASTRUCTURE  •  CIVIL WORKS'
 
