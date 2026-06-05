@@ -5,8 +5,9 @@
 // We use window.location.origin to resolve correctly in dev and prod.
 //
 // REQUIRED FILES (see docs/FONTS.md for download instructions):
-//   public/fonts/PlayfairDisplay-Bold.ttf
+//   public/fonts/PlayfairDisplaySC-Bold.ttf
 //   public/fonts/PlayfairDisplay-Regular.ttf
+//   public/fonts/PlayfairDisplay-Bold.ttf
 //   public/fonts/Montserrat-Regular.ttf
 //   public/fonts/Montserrat-SemiBold.ttf
 //   public/fonts/Montserrat-Bold.ttf
@@ -16,7 +17,15 @@ import { Font } from '@react-pdf/renderer'
 
 const base = typeof window !== 'undefined' ? window.location.origin : ''
 
-// Playfair Display — heavy bold serif, used for "SRI VAISHNAV"
+// Playfair Display SC — Small Caps variant, used for "SRI VAISHNAV"
+Font.register({
+  family: 'Playfair Display SC',
+  fonts: [
+    { src: `${base}/fonts/PlayfairDisplaySC-Bold.ttf`, fontWeight: 700 },
+  ],
+})
+
+// Playfair Display — regular/bold, kept as fallback
 Font.register({
   family: 'Playfair Display',
   fonts: [
