@@ -49,43 +49,65 @@
 
 ---
 
-## D008 — Typography
-**Decision:** Cormorant Garamond SemiBold for `SRI VAISHNAV` only. Montserrat for all other text.
-**Reason:** Matches the premium construction firm identity. Two-font discipline keeps the letterhead clean.
+## D008 — Brand Typography
+**Decision:** Playfair Display SC Bold for `SRI VAISHNAV`. Montserrat for all other text.
+**Reason:** Playfair Display SC has the heavy high-contrast Roman serifs that match the physical letterhead reference. SC (Small Caps) variant gives the all-caps typographic structure seen in the brand. Montserrat keeps supporting text clean and modern.
+**Supersedes:** Original decision to use Cormorant Garamond (too light) and Cinzel (too condensed).
 **Status:** Final
 
 ---
 
 ## D009 — PDF Font Loading Strategy
 **Decision:** Self-host TTF files in `public/fonts/`. Register via `Font.register()` with absolute URLs using `window.location.origin`.
-**Reason:** `@react-pdf/renderer` (PDFKit) fetches fonts via raw XHR and can only parse `.ttf`/`.otf`. Google Fonts CDN serves `.woff2` to browsers which PDFKit cannot parse. Self-hosted TTF is the only reliable approach.
+**Reason:** `@react-pdf/renderer` (PDFKit) fetches fonts via raw XHR and can only parse `.ttf`/`.otf`. Google Fonts CDN serves `.woff2` to browsers which PDFKit cannot parse.
 **Status:** Final
-**Requires:** Manual step — 5 TTF files must be placed in `public/fonts/`. See `docs/FONTS.md`.
+**Requires:** Manual step — TTF files must be placed in `public/fonts/`. See `docs/FONTS.md`.
 
 ---
 
 ## D010 — PDF Render Architecture
 **Decision:** Single `BlobProvider` in `PreviewScreen`. No `PDFDownloadLink`.
-**Reason:** `@react-pdf/renderer` v4 crashes when two PDF instances render simultaneously (e.g. `BlobProvider` + `PDFDownloadLink`). Single `BlobProvider` drives both the inline `<object>` preview and the download button via `URL.createObjectURL(blob)`.
+**Reason:** `@react-pdf/renderer` v4 crashes when two PDF instances render simultaneously. Single `BlobProvider` drives both preview and download.
 **Status:** Final
 
 ---
 
 ## D011 — Buffer Polyfill
 **Decision:** Inline IIFE shim in `main.tsx` (must be first code executed). Plus `define` block in `vite.config.ts`.
-**Reason:** Vite externalizes the `buffer` npm package for browser builds. Bare `import { Buffer } from 'buffer'` throws at runtime. The inline shim installs a `Uint8Array`-based `Buffer` on `globalThis` before any other module loads.
+**Reason:** Vite externalizes the `buffer` npm package for browser builds. Bare `import { Buffer } from 'buffer'` throws at runtime.
 **Status:** Final
 
 ---
 
 ## D012 — Preview Screen Layout
 **Decision:** `<object>` PDF preview shown on all devices (no mobile/desktop split).
-**Reason:** Earlier `isMobile()` userAgent detection was hiding preview on phones. `<object>` works on Chrome Android and most mobile browsers. iOS Safari fallback card with download button handles the edge case.
+**Reason:** `isMobile()` was hiding preview on phones. `<object>` works on Chrome Android. iOS Safari fallback card handles edge case.
 **Status:** Final
 
 ---
 
 ## D013 — Preview Screen Background
-**Decision:** `App.tsx` sets `background: #1C1C1E` on the root div when on preview screen.
-**Reason:** Without this, the ivory body background bleeds through below `PreviewScreen` content when `BottomNav` is hidden, creating a white gap at the bottom.
+**Decision:** `App.tsx` sets `background: #1C1C1E` on root div when on preview screen.
+**Reason:** Ivory body background bleeds through below PreviewScreen content when BottomNav is hidden.
+**Status:** Final
+
+---
+
+## D014 — Letterhead Design Language
+**Decision:** Ivory background throughout (header, body, footer). Gold hairline rules as dividers. No heavy dark ink bands.
+**Reason:** Dark brown bands waste ink on print. Ivory-on-ivory design is print-efficient while maintaining premium feel through typography and gold accents. Matches the physical reference letterhead.
+**Status:** Final
+
+---
+
+## D015 — Signatory Stamp
+**Decision:** No digital stamp badge in `Signatory` component. Physical rubber stamp used on printed copies.
+**Reason:** Physical stamp is preferred by the proprietor for authenticity. Digital stamp element was removed to keep the signatory block clean.
+**Status:** Final
+
+---
+
+## D016 — Signatory Positioning
+**Decision:** `Signatory` uses `position: absolute, bottom: 0` within the content area.
+**Reason:** Ensures signatory always appears at the bottom of the page regardless of content length. On empty letterheads it sits just above the footer. Content area has `marginBottom: 65` which clears the footer height.
 **Status:** Final

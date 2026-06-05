@@ -1,42 +1,55 @@
 # Changelog
 
+## [Phase 2 — Session 3 Redesign] — 2026-06-05
+
+### Changed
+- `Header.tsx` — Full premium redesign: ivory background (no dark band), logo 80px, `SRI VAISHNAV` in Playfair Display SC Bold 28pt tight letterSpacing, `— CONSTRUCTIONS —` with gold dash lines, tagline in Montserrat 5.5pt muted, full-width gold hairline rule at bottom
+- `Footer.tsx` — Switched from dark brown band to ivory background: gold hairline rule on top, left accent bar, phone | GSTIN | email top row, address centered below. Zero heavy ink usage.
+- `Watermark.tsx` — Reduced size 260px → 220px, opacity 3.5% → 3.2%
+- `Signatory.tsx` — Removed stamp badge container (physical stamps used). Changed layout to `position: absolute, bottom: 0` so signatory always anchors to bottom of content area regardless of content length.
+- `src/pdf/fonts.ts` — Replaced Cormorant Garamond + Cinzel with Playfair Display (Regular + Bold) and Playfair Display SC (Bold). Added `Font.register()` for `'Playfair Display SC'` family.
+- `src/constants/brand.ts` — Updated with real contact data: phone `7989230912`, email `rambabuut@gmail.com`, address `2-14, Godavarru, Kankipadu Mandal, Krishna District, Andhra Pradesh – 521151`, GSTIN `37ADUPU2453N1ZK`, tagline `ENGINEERING • INFRASTRUCTURE • CIVIL WORKS`
+- `docs/FONTS.md` — Updated required files list and download instructions for Playfair Display SC
+
+### Fixed
+- Signatory was floating at top of content area when page was empty — now always pinned to bottom above footer
+- Font family mismatch error `Font family not registered: Playfair Display SC` — resolved by registering family name exactly matching usage in `Header.tsx`
+
+---
+
 ## [Phase 2 — Bug Fix Session] — 2026-06-04
 
 ### Fixed
-- `main.tsx` — Replaced bare `import { Buffer } from 'buffer'` (Vite externalizes it) with an inline IIFE shim that installs `Buffer` on `globalThis` before any other module loads. Implements `from`, `alloc`, `allocUnsafe`, `isBuffer`, `concat` via native `Uint8Array`.
-- `vite.config.ts` — Added `define` block: `global: 'globalThis'`, `process.env: '{}'`, `process.browser: 'true'` to satisfy PDFKit Node-like environment checks.
-- `LetterheadFirstPage.tsx` — Removed `fontFamily: 'Montserrat'` from `<Page>` style. Was causing `Font family not registered` error because Montserrat was not yet registered when Page style evaluated.
-- `LetterheadContinuationPage.tsx` — Same fix as above.
-- `PreviewScreen.tsx` — Removed `PDFDownloadLink` from top bar entirely. Replaced with a plain `<button>` that calls `URL.createObjectURL(blob)`. Eliminates double-render crash caused by `BlobProvider` + `PDFDownloadLink` both rendering the PDF simultaneously (known `@react-pdf/renderer` v4 limitation).
-- `PreviewScreen.tsx` — Removed `isMobile()` userAgent check. `<object>` PDF preview now shown on all devices. Fallback card shown inside `<object>` for browsers that block inline PDF (some iOS Safari).
-- `App.tsx` — Dynamic background: `#1C1C1E` when on preview screen, `var(--color-ivory)` otherwise. Eliminates ivory bleed-through visible below preview content.
-- `index.html` — Added `<meta name="mobile-web-app-capable" content="yes">` (modern standard) alongside existing Apple tag.
+- `main.tsx` — Replaced bare `import { Buffer } from 'buffer'` with inline IIFE shim on `globalThis`
+- `vite.config.ts` — Added `define` block: `global`, `process.env`, `process.browser`
+- `LetterheadFirstPage.tsx` — Removed `fontFamily: 'Montserrat'` from `<Page>` style
+- `LetterheadContinuationPage.tsx` — Same fix as above
+- `PreviewScreen.tsx` — Removed `PDFDownloadLink`, replaced with `URL.createObjectURL(blob)` button
+- `PreviewScreen.tsx` — Removed `isMobile()` check, `<object>` shown on all devices
+- `App.tsx` — Dynamic background: dark on preview screen, ivory elsewhere
+- `index.html` — Added `mobile-web-app-capable` meta tag
 
 ### Added
-- `src/pdf/fonts.ts` — Proper `Font.register()` calls for Cormorant Garamond (600) and Montserrat (400, 400i, 600, 700) loading from `public/fonts/*.ttf` via `window.location.origin` absolute URLs. Includes `Font.registerHyphenationCallback` to prevent hyphenation.
-- `docs/FONTS.md` — Step-by-step instructions for downloading and placing the 5 required TTF files in `public/fonts/`.
+- `src/pdf/fonts.ts` — Font.register() for Cormorant Garamond + Montserrat from `public/fonts/`
+- `docs/FONTS.md` — Font download and setup instructions
 
-### Changed (Premium Redesign)
-- `Header.tsx` — Redesigned: 3pt gold top edge + dark brown brand band with logo, `SRI VAISHNAV` in Cormorant Garamond 22pt tracked, flanking gold lines, `CONSTRUCTIONS` in Montserrat tracked caps, italic tagline.
-- `Footer.tsx` — Redesigned: dark brown band matching header, gold top accent, two-row layout (phone + brand + email / address + GSTIN).
-- `Watermark.tsx` — Switched from text to logo image at 3.5% opacity, centred on page.
-- `Signatory.tsx` — Redesigned: right-aligned signature block with ruled line, gold stamp badge flanked by hairlines, name in Montserrat Bold tracked caps, designation in Montserrat Regular.
+### Changed (Redesign)
+- `Header.tsx` — Gold top edge + dark brown band, Cormorant Garamond brand name
+- `Footer.tsx` — Dark brown band, two-row contact layout
+- `Watermark.tsx` — Logo image at 3.5% opacity
+- `Signatory.tsx` — Right-aligned signature block with gold stamp badge
 
 ---
 
 ## [Phase 2 — Initial Build] — 2026-06-03
 
 ### Added
-- `svc-letter-studio/vite.config.ts` — Vite config with `@tailwindcss/vite` plugin and `vite-plugin-pwa`
-- `svc-letter-studio/src/index.css` — Tailwind v4 import, Google Fonts (Cormorant Garamond + Montserrat), CSS custom properties for brand colors and fonts
-- `svc-letter-studio/src/main.tsx` — App entry point
-- `svc-letter-studio/src/App.tsx` — State-driven screen router, hides BottomNav on preview screen
-- `svc-letter-studio/src/App.css` — Cleared to minimal comment only
-- `src/components/pdf/LetterheadDocument.tsx` — Root PDF Document component
-- `src/components/pdf/LetterheadFirstPage.tsx` — First page layout with header/footer/watermark
-- `src/components/pdf/LetterheadContinuationPage.tsx` — Continuation page with minimal top bar
-- `src/components/pdf/Header.tsx` — Brand header
-- `src/components/pdf/Footer.tsx` — Contact footer
-- `src/components/pdf/Watermark.tsx` — Background watermark
-- `src/components/pdf/Signatory.tsx` — Signature block
-- `src/screens/PreviewScreen.tsx` — Preview and export screen
+- `vite.config.ts`, `src/index.css`, `src/main.tsx`, `src/App.tsx`, `src/App.css`
+- `src/components/pdf/LetterheadDocument.tsx`
+- `src/components/pdf/LetterheadFirstPage.tsx`
+- `src/components/pdf/LetterheadContinuationPage.tsx`
+- `src/components/pdf/Header.tsx`
+- `src/components/pdf/Footer.tsx`
+- `src/components/pdf/Watermark.tsx`
+- `src/components/pdf/Signatory.tsx`
+- `src/screens/PreviewScreen.tsx`

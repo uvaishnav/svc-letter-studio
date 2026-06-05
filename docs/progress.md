@@ -12,19 +12,25 @@
 ### Phase 2 — Letterhead PDF Engine ✅
 - `@react-pdf/renderer` integrated
 - `LetterheadDocument`, `LetterheadFirstPage`, `LetterheadContinuationPage` components
-- `Header` — gold top edge + dark brown band + logo + brand hierarchy
-- `Footer` — dark brown band + two-row contact info + gold accent
-- `Watermark` — centred logo at 3.5% opacity
-- `Signatory` — right-aligned signature block with gold stamp badge
+- `Header` — ivory bg, logo + Playfair Display SC brand name, gold dash ornaments, Montserrat tagline, full-width gold hairline rule
+- `Footer` — ivory bg, gold hairline rule on top, phone | GSTIN | email row, address centered below
+- `Watermark` — centred logo at 3.2% opacity, 220px
+- `Signatory` — absolutely positioned to bottom of content area (above footer), right-aligned, signature ruled line, name + designation
 - `PreviewScreen` — single BlobProvider, inline `<object>` preview on all devices, download button
 - Self-hosted font loading from `public/fonts/` via `src/pdf/fonts.ts`
-- Buffer polyfill shim in `main.tsx` (inline IIFE, no bare npm import)
+- Buffer polyfill shim in `main.tsx`
 - `vite.config.ts` — `define: { global, process.env, process.browser }`
-- `App.tsx` — dynamic background (dark on preview, ivory elsewhere) to prevent bleed-through
-- `index.html` — added `mobile-web-app-capable` meta tag
+- `App.tsx` — dynamic background (dark on preview, ivory elsewhere)
+- `brand.ts` — corrected with real contact data (phone, email, address, GSTIN, tagline)
 
-#### Known blocker (manual step required before fonts work)
-Font files must be placed manually in `public/fonts/`. See `docs/FONTS.md`.
+#### Font files required in `public/fonts/` (see `docs/FONTS.md`)
+- `PlayfairDisplaySC-Bold.ttf`
+- `PlayfairDisplay-Regular.ttf`
+- `PlayfairDisplay-Bold.ttf`
+- `Montserrat-Regular.ttf`
+- `Montserrat-Italic.ttf`
+- `Montserrat-SemiBold.ttf`
+- `Montserrat-Bold.ttf`
 
 ---
 
@@ -44,12 +50,22 @@ Font files must be placed manually in `public/fonts/`. See `docs/FONTS.md`.
 - Phases 1 and 2 scaffolded and built
 
 ### Session 2 — 2026-06-04
-- Diagnosed and fixed: `Buffer is not defined` (PDFKit needs Node Buffer in browser)
-- Diagnosed and fixed: `Font family not registered: Montserrat` (`LetterheadFirstPage` and `LetterheadContinuationPage` had `fontFamily: 'Montserrat'` on `<Page>` style without registration)
-- Diagnosed and fixed: Export button unclickable + double render crash (`PDFDownloadLink` + `BlobProvider` rendered PDF twice simultaneously — v4 limitation)
-- Fixed: `vite.config.ts` externalizing `buffer` package — switched to inline IIFE shim
-- Fixed: Preview not showing on mobile — removed `isMobile()` check, `<object>` shown on all devices
-- Fixed: Ivory bleed-through below preview — `App.tsx` now sets dark bg when on preview screen
-- Fixed: `apple-mobile-web-app-capable` deprecation warning — added `mobile-web-app-capable`
-- Rebuilt: Premium letterhead — dark brown header band, gold accents, Cormorant Garamond + Montserrat hierarchy
-- Added: `docs/FONTS.md` with step-by-step font download instructions
+- Diagnosed and fixed: `Buffer is not defined`
+- Diagnosed and fixed: `Font family not registered: Montserrat`
+- Diagnosed and fixed: Export button unclickable + double render crash
+- Fixed: `vite.config.ts` externalizing `buffer` package
+- Fixed: Preview not showing on mobile
+- Fixed: Ivory bleed-through below preview
+- Fixed: `apple-mobile-web-app-capable` deprecation warning
+- Rebuilt: Premium letterhead — dark brown header band, gold accents
+- Added: `docs/FONTS.md`
+
+### Session 3 — 2026-06-05
+- Redesigned header: ivory bg, no dark band, logo + Playfair Display SC wordmark, gold hairline rule
+- Redesigned footer: ivory bg, gold hairline rule, GSTIN prominent center, clean two-row layout
+- Updated `brand.ts`: real phone, email, address, GSTIN, corrected tagline
+- Switched font: Playfair Display SC Bold for `SRI VAISHNAV` (replaces Cormorant Garamond / Cinzel)
+- Removed stamp container from `Signatory` (physical stamps used instead)
+- Fixed: Signatory now absolutely positioned to bottom of content area — always at bottom on empty letterhead
+- Registered `Playfair Display SC` family in `fonts.ts`
+- Updated `docs/FONTS.md` with Playfair Display SC instructions
