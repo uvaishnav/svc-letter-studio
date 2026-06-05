@@ -2,9 +2,13 @@ import { View, Text, StyleSheet } from '@react-pdf/renderer'
 import { COLORS } from '../../constants/brand'
 
 const S = StyleSheet.create({
+  // Absolutely positioned — always sits at the bottom of the page, above footer
   container: {
-    marginTop: 48,
-    marginHorizontal: 32,
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    marginHorizontal: 36,
     alignItems: 'flex-end',
   },
   signatureBox: {
@@ -18,25 +22,6 @@ const S = StyleSheet.create({
     borderBottomColor: COLORS.brownMuted,
     borderBottomStyle: 'solid',
     marginBottom: 5,
-  },
-  stampBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    marginBottom: 4,
-  },
-  stampLine: {
-    height: 0.5,
-    width: 20,
-    backgroundColor: COLORS.gold,
-  },
-  stamp: {
-    fontFamily: 'Montserrat',
-    fontWeight: 400,
-    fontStyle: 'italic',
-    fontSize: 6,
-    color: COLORS.gold,
-    letterSpacing: 0.8,
   },
   name: {
     fontFamily: 'Montserrat',
