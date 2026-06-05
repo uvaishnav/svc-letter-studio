@@ -37,7 +37,7 @@ const S = StyleSheet.create({
 
   // "SRI VAISHNAV" — Playfair Display Bold, heavy, tight spacing
   brandPrimary: {
-    fontFamily: 'Playfair Display',
+    fontFamily: 'Playfair Display SC',
     fontWeight: 700,
     fontSize: 28,
     letterSpacing: 1,
