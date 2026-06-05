@@ -1,24 +1,55 @@
 # Changelog
 
-## [Phase 1] — 2026-06-03 — Foundation & Design System
+## [Phase 2 — Session 3 Redesign] — 2026-06-05
+
+### Changed
+- `Header.tsx` — Full premium redesign: ivory background (no dark band), logo 80px, `SRI VAISHNAV` in Playfair Display SC Bold 28pt tight letterSpacing, `— CONSTRUCTIONS —` with gold dash lines, tagline in Montserrat 5.5pt muted, full-width gold hairline rule at bottom
+- `Footer.tsx` — Switched from dark brown band to ivory background: gold hairline rule on top, left accent bar, phone | GSTIN | email top row, address centered below. Zero heavy ink usage.
+- `Watermark.tsx` — Reduced size 260px → 220px, opacity 3.5% → 3.2%
+- `Signatory.tsx` — Removed stamp badge container (physical stamps used). Changed layout to `position: absolute, bottom: 0` so signatory always anchors to bottom of content area regardless of content length.
+- `src/pdf/fonts.ts` — Replaced Cormorant Garamond + Cinzel with Playfair Display (Regular + Bold) and Playfair Display SC (Bold). Added `Font.register()` for `'Playfair Display SC'` family.
+- `src/constants/brand.ts` — Updated with real contact data: phone `7989230912`, email `rambabuut@gmail.com`, address `2-14, Godavarru, Kankipadu Mandal, Krishna District, Andhra Pradesh – 521151`, GSTIN `37ADUPU2453N1ZK`, tagline `ENGINEERING • INFRASTRUCTURE • CIVIL WORKS`
+- `docs/FONTS.md` — Updated required files list and download instructions for Playfair Display SC
+
+### Fixed
+- Signatory was floating at top of content area when page was empty — now always pinned to bottom above footer
+- Font family mismatch error `Font family not registered: Playfair Display SC` — resolved by registering family name exactly matching usage in `Header.tsx`
+
+---
+
+## [Phase 2 — Bug Fix Session] — 2026-06-04
+
+### Fixed
+- `main.tsx` — Replaced bare `import { Buffer } from 'buffer'` with inline IIFE shim on `globalThis`
+- `vite.config.ts` — Added `define` block: `global`, `process.env`, `process.browser`
+- `LetterheadFirstPage.tsx` — Removed `fontFamily: 'Montserrat'` from `<Page>` style
+- `LetterheadContinuationPage.tsx` — Same fix as above
+- `PreviewScreen.tsx` — Removed `PDFDownloadLink`, replaced with `URL.createObjectURL(blob)` button
+- `PreviewScreen.tsx` — Removed `isMobile()` check, `<object>` shown on all devices
+- `App.tsx` — Dynamic background: dark on preview screen, ivory elsewhere
+- `index.html` — Added `mobile-web-app-capable` meta tag
 
 ### Added
-- `svc-letter-studio/vite.config.ts` — Vite config with `@tailwindcss/vite` plugin and `vite-plugin-pwa` (PWA manifest, workbox, icons configured)
-- `svc-letter-studio/src/index.css` — Tailwind v4 import, Google Fonts (Cormorant Garamond + Montserrat), CSS custom properties for all brand colors and fonts, safe-area inset helpers
-- `svc-letter-studio/src/main.tsx` — App entry point
-- `svc-letter-studio/src/App.tsx` — State-driven screen router (no URL router), exports `Screen` type, hides BottomNav on preview screen
-- `svc-letter-studio/src/App.css` — Cleared to minimal comment only
-- `svc-letter-studio/src/constants/brand.ts` — `COLORS`, `FONTS`, brand name strings, `CONTACT` constants
-- `svc-letter-studio/src/constants/defaults.ts` — `DEFAULT_SIGNATORY` (UPPALAPATI SUREKHA / Proprietor), `DEFAULT_PDF_SETTINGS`
-- `svc-letter-studio/src/store/sessionStore.ts` — `useSessionStore` hook, `SessionState` / `DocumentContext` / `PDFSettings` interfaces, `initialState`
-- `svc-letter-studio/src/screens/HomeScreen.tsx` — Branded home with logo, Compose button, Upload/Settings grid, Recent Letters placeholder
-- `svc-letter-studio/src/screens/IntakeScreen.tsx` — Placeholder with back nav and Continue button
-- `svc-letter-studio/src/screens/DraftScreen.tsx` — Placeholder with back nav and Preview button
-- `svc-letter-studio/src/screens/PreviewScreen.tsx` — Full-screen dark preview layout, top bar with Back/Export, A4 aspect ratio placeholder
-- `svc-letter-studio/src/screens/SettingsScreen.tsx` — Signatory display, watermark toggle placeholder
-- `svc-letter-studio/src/components/ui/BottomNav.tsx` — Dark brown bottom nav, gold active state, safe-area-inset-bottom padding for iPhone
-- `svc-letter-studio/index.html` — PWA meta tags (apple-mobile-web-app-capable, status-bar-style, theme-color, apple-touch-icon)
+- `src/pdf/fonts.ts` — Font.register() for Cormorant Garamond + Montserrat from `public/fonts/`
+- `docs/FONTS.md` — Font download and setup instructions
 
-### Notes
-- `index.html` script src path needs verification — should be `/src/main.tsx` not `/svc-letter-studio/src/main.tsx` depending on Vite root config
-- Logo and PWA icon assets not yet added (manual step for user)
+### Changed (Redesign)
+- `Header.tsx` — Gold top edge + dark brown band, Cormorant Garamond brand name
+- `Footer.tsx` — Dark brown band, two-row contact layout
+- `Watermark.tsx` — Logo image at 3.5% opacity
+- `Signatory.tsx` — Right-aligned signature block with gold stamp badge
+
+---
+
+## [Phase 2 — Initial Build] — 2026-06-03
+
+### Added
+- `vite.config.ts`, `src/index.css`, `src/main.tsx`, `src/App.tsx`, `src/App.css`
+- `src/components/pdf/LetterheadDocument.tsx`
+- `src/components/pdf/LetterheadFirstPage.tsx`
+- `src/components/pdf/LetterheadContinuationPage.tsx`
+- `src/components/pdf/Header.tsx`
+- `src/components/pdf/Footer.tsx`
+- `src/components/pdf/Watermark.tsx`
+- `src/components/pdf/Signatory.tsx`
+- `src/screens/PreviewScreen.tsx`

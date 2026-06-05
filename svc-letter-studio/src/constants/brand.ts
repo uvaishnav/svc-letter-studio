@@ -16,12 +16,13 @@ export const FONTS = {
 } as const
 
 export const BRAND_NAME_PRIMARY   = 'SRI VAISHNAV'
+export const BRAND_NAME_PRIMARY_HEADER = 'Sri Vaishnav'
 export const BRAND_NAME_SECONDARY = 'CONSTRUCTIONS'
-export const BRAND_TAGLINE = 'Building Trust, Constructing Excellence'
+export const BRAND_TAGLINE        = 'ENGINEERING  •  INFRASTRUCTURE  •  CIVIL WORKS'
 
 export const CONTACT = {
-  phone:   '+91 99999 99999',
-  email:   'info@srivaishnavconstructions.com',
-  address: 'Hyderabad, Telangana',
-  gstin:   '',
+  phone:   '7989230912',
+  email:   'rambabuut@gmail.com',
+  address: '2-14, Godavarru, Kankipadu Mandal, Krishna District, Andhra Pradesh – 521151',
+  gstin:   '37ADUPU2453N1ZK',
 } as const
