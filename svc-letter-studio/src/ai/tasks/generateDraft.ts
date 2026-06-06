@@ -6,8 +6,9 @@ import { GroqProvider } from '../groq';
 import { buildDraftSystemPrompt, buildDraftUserPrompt } from '../prompts';
 import type { PipelineContext, AIOutput } from '../types';
 import type { LetterDraft } from '../../types/document';
+import { DEFAULT_SIGNATORY } from '../../constants/defaults';
 
-// ─── Normalizer ─────────────────────────────────────────────────────────────
+// ─── Normalizer ────────────────────────────────────────────────────────────────────────
 // Safety net: AI may still return the old flat shape or use "body" instead of
 // "blocks". This normalizes both shapes into the canonical LetterDraft shape.
 function normalizeDraft(raw: any): LetterDraft {
@@ -29,8 +30,8 @@ function normalizeDraft(raw: any): LetterDraft {
   // Normalize flat signatory fields -> nested signatory object
   if (!envelope.signatory && (envelope.signatoryName || envelope.signatoryDesignation)) {
     envelope.signatory = {
-      name:        envelope.signatoryName        ?? 'UPPALAPATI SUREKHA',
-      designation: envelope.signatoryDesignation ?? 'Proprietor',
+      name:        envelope.signatoryName        ?? DEFAULT_SIGNATORY.name,
+      designation: envelope.signatoryDesignation ?? DEFAULT_SIGNATORY.designation,
     };
     delete envelope.signatoryName;
     delete envelope.signatoryDesignation;
@@ -38,13 +39,13 @@ function normalizeDraft(raw: any): LetterDraft {
 
   // Ensure signatory always has a value
   if (!envelope.signatory) {
-    envelope.signatory = { name: 'UPPALAPATI SUREKHA', designation: 'Proprietor' };
+    envelope.signatory = { ...DEFAULT_SIGNATORY };
   }
 
   return { envelope, blocks };
 }
 
-// ─── Main task ─────────────────────────────────────────────────────────────
+// ─── Main task ────────────────────────────────────────────────────────────────────────
 export async function generateDraftFromContext(
   ctx: PipelineContext
 ): Promise<AIOutput> {
