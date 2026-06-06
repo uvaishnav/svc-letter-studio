@@ -8,14 +8,18 @@
  *   3. We pass the extracted text straight into the existing
  *      classifyIntent → generateClarification → generateDraft pipeline
  *      (identical to IntakeScreen — reuses 100% of AI + PDF layers)
+ *
+ * D005: All AI calls go through src/ai/adapter.ts — never import task files directly.
  */
 
 import { useRef, useState } from 'react';
 import type { Screen } from '../App';
 import { extractTextFromFile } from '../utils/extractText';
-import { classifyIntent } from '../ai/tasks/classifyIntent';
-import { generateClarification } from '../ai/tasks/generateClarification';
-import { generateDraft } from '../ai/tasks/generateDraft';
+import {
+  classifyIntent,
+  generateClarification,
+  generateDraft,
+} from '../ai/adapter';
 import type { PipelineContext } from '../ai/types';
 import type { LetterDraft } from '../types/document';
 
@@ -57,16 +61,15 @@ export default function UploadScreen({
   const [errorMsg, setErrorMsg]       = useState<string | null>(null);
 
   // Clarification state
-  const [needsClarify, setNeedsClarify] = useState(false);
+  const [needsClarify, setNeedsClarify]       = useState(false);
   const [clarifyQuestion, setClarifyQuestion] = useState('');
   const [clarifyAnswer, setClarifyAnswer]     = useState('');
-  const [pendingCtx, setPendingCtx]   = useState<PipelineContext | null>(null);
+  const [pendingCtx, setPendingCtx]           = useState<PipelineContext | null>(null);
 
-  // ─── Main pipeline ───────────────────────────────────────────────────────────
+  // ─── Main pipeline ───
   async function runPipeline(extractedText: string) {
     setRawInput(extractedText);
 
-    // Stage 2 — classify
     setStage('classifying');
     let ctx: PipelineContext;
     try {
@@ -77,13 +80,10 @@ export default function UploadScreen({
       return;
     }
 
-    // Stage 3 — clarification (if required fields missing)
     setStage('clarifying');
-    let finalCtx = ctx;
     try {
       const clarification = await generateClarification(ctx);
       if (clarification.question) {
-        // Pause pipeline — show clarification UI
         setPipelineCtx(ctx);
         setPendingCtx(ctx);
         setClarifyQuestion(clarification.question);
@@ -92,10 +92,10 @@ export default function UploadScreen({
         return;
       }
     } catch {
-      // Non-fatal — continue without clarification
+      // Non-fatal — skip clarification and continue
     }
 
-    await finalizeDraft(finalCtx);
+    await finalizeDraft(ctx);
   }
 
   async function finalizeDraft(ctx: PipelineContext) {
@@ -111,7 +111,7 @@ export default function UploadScreen({
     }
   }
 
-  // ─── File pick handler ───────────────────────────────────────────────────────
+  // ─── File pick handler ───
   async function handleFile(file: File) {
     setStage('extracting');
     setFileName(file.name);
@@ -132,7 +132,6 @@ export default function UploadScreen({
   function onFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (file) handleFile(file);
-    // Reset input so same file can be re-picked after error
     e.target.value = '';
   }
 
@@ -142,7 +141,7 @@ export default function UploadScreen({
     if (file) handleFile(file);
   }
 
-  // ─── Clarification submit ────────────────────────────────────────────────────
+  // ─── Clarification submit ───
   async function submitClarification() {
     if (!pendingCtx || !clarifyAnswer.trim()) return;
     const enrichedCtx: PipelineContext = {
@@ -163,11 +162,10 @@ export default function UploadScreen({
     finalizeDraft(pendingCtx);
   }
 
-  // ─── Derived state ───────────────────────────────────────────────────────────
   const isProcessing = ['extracting', 'classifying', 'clarifying', 'generating'].includes(stage);
   const stageLabel   = STAGE_LABELS[stage];
 
-  // ─── Render ──────────────────────────────────────────────────────────────────
+  // ─── Render ───
   return (
     <div className="flex flex-col min-h-full px-5 pt-14 pb-8" style={{ background: '#F5F1E8' }}>
 
@@ -188,7 +186,7 @@ export default function UploadScreen({
         </p>
       </div>
 
-      {/* Drop zone / file picker */}
+      {/* Drop zone */}
       {stage === 'idle' && !needsClarify && (
         <div
           className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed py-12 px-6 cursor-pointer"
