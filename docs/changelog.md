@@ -1,6 +1,37 @@
 # Changelog
 
-## Session 8 — 2026-06-06
+## Session 8b — 2026-06-06
+
+### Fixed
+- `src/screens/PreviewScreen.tsx`
+  - Replaced `← Back` (went to intake) with `✏️ Edit` button — navigates to `'draft'` if draft exists, else `'intake'`
+  - Preview ⇄ Draft toggle is now fully two-way
+- `src/components/draft/BlockList.tsx` — complete redesign
+  - **Was:** 2-line truncated text preview, tap to select only
+  - **Now:** Full content visible for every block type, inline editing per block
+- `src/screens/DraftScreen.tsx`
+  - Passes `onUpdate` prop to `BlockList` for inline edits
+  - Deselects block after AI improve completes
+  - Added hint text: "Tap a block to select it for AI actions. Use ✎ inline to edit text directly."
+
+### Changed — BlockList type-aware inline editors
+
+| Block type | Visual rendering | Edit mechanism |
+|---|---|---|
+| `paragraph` | Full text, respects `bold` and `indent` | ✎ pencil icon → textarea, Save/Cancel |
+| `heading` level 1 | Large bold text, bottom border | ✎ pencil icon → input |
+| `heading` level 2 | Medium bold text | ✎ pencil icon → input |
+| `bullet_list` | Rendered • items | Per-item ✎ edit + ✕ remove + `+ Add item` |
+| `numbered_list` | Rendered 1. 2. items | Per-item ✎ edit + ✕ remove + `+ Add item` |
+| `table` | HTML table, styled headers | Tap any cell to edit inline, blur/Enter to save + `+ Add row` |
+| `spacer` | Dashed line with SPACER label | Not editable |
+| `divider` | Gold solid line with DIVIDER label | Not editable |
+
+- AI action bar (BlockActionBar) still works independently — tap block card to select, bottom sheet slides up with Shorten/Expand/Formal/Rewrite/Tell AI
+
+---
+
+## Session 8a — 2026-06-06
 
 ### Fixed
 - `src/components/pdf/LetterheadDocument.tsx` — switched `partitionDebug()` → `partitionBlocks()`. Debug mode cleared.
@@ -22,11 +53,7 @@
   - Collapsible section (chevron toggle)
   - Fields: Date, Ref No., Subject, Recipient (Name / Designation / Company / Address)
   - Gold label style, ivory input background, 8px border-radius
-- `src/components/draft/BlockList.tsx`
-  - Renders each ContentBlock as a tappable card
-  - Selected block: gold border + warm tint background
-  - Block type label (uppercase gold), 2-line text preview
-  - Spacer/divider blocks shown but not selectable (opacity 0.5)
+- `src/components/draft/BlockList.tsx` (initial version, redesigned in 8b)
 - `src/components/draft/BlockActionBar.tsx`
   - Fixed bottom sheet (position: fixed, bottom: 0)
   - 3 modes: `actions` (default), `edit` (manual text), `custom` (free AI instruction)
@@ -35,8 +62,8 @@
   - Drag handle visual at top
   - Loading state disables all buttons
 - `src/screens/DraftScreen.tsx`
-  - Sticky dark-brown top bar: ← Back, "Edit Draft" title, 👁 Preview button
-  - Scrollable content: error banner, EnvelopeFields, block count label, AI loading indicator, BlockList
+  - Sticky dark-brown top bar: ← Intake, "✏️ Edit Draft" title, 👁 Preview button
+  - Scrollable content: error banner, EnvelopeFields, block section header, AI loading indicator, BlockList
   - BlockActionBar mounts when a block is selected
   - `paddingBottom` grows when action bar is visible to prevent content clip
   - Empty state with Back to Intake button when no draft exists
@@ -69,7 +96,7 @@
   - Page number `position:absolute, bottom:18, right:36`
   - Exports `CONT_CONTENT_MAX_HEIGHT = 743.89` constant
 - `src/components/pdf/LetterheadDocument.tsx` — rewritten
-  - Calls `partitionBlocks()` / `partitionDebug()` to get page assignments
+  - Calls `partitionBlocks()` to get page assignments
   - Renders explicit `LetterheadFirstPage` + N `LetterheadContinuationPage` elements
   - Signatory only on last page
 

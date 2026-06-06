@@ -45,7 +45,7 @@
 - **Root cause fixed:** `LetterheadFirstPage` `flex:1` → `maxHeight:648.14` (content was expanding into footer zone)
 - **Continuation page rebuilt:** blank ivory, `marginTop:50pt`, `marginBottom:48pt`, watermark, page number bottom-right. Exports `CONT_CONTENT_MAX_HEIGHT` constant.
 - **`src/pdf/partitionBlocks.ts`** — pure partition function with 6-step pipeline
-- **`LetterheadDocument.tsx`** rewritten: calls partition, renders explicit pages, signatory on last page only
+- **`LetterheadDocument.tsx`** rewritten: calls `partitionBlocks()`, renders explicit pages, signatory on last page only
 - **`useCompactLayout.ts`** deleted — no spacing compression, ever
 
 ### Phase 6 — Draft Output, AI Improve Actions, Manual Editing UI ✅
@@ -55,9 +55,15 @@
 - **`src/ai/adapter.ts`** — exports `improveBlock`, `ImproveBlockInput`, `ImproveAction`
 - **`src/store/sessionStore.ts`** — added `updateBlock(index, block)` and `updateEnvelope(partial)` actions
 - **`src/components/draft/EnvelopeFields.tsx`** — collapsible tap-to-edit panel (date, ref, subject, recipient)
-- **`src/components/draft/BlockList.tsx`** — scrollable block list with tap-to-select highlight, block type labels, 2-line preview
-- **`src/components/draft/BlockActionBar.tsx`** — sticky bottom sheet with 3 modes: AI actions (Shorten/Expand/Formal/Rewrite), Tell AI custom instruction, Manual text edit
-- **`src/screens/DraftScreen.tsx`** — full edit mode screen: sticky top bar with Preview toggle, envelope section, block list, action bar
+- **`src/components/draft/BlockList.tsx`** — type-aware inline editors for all block types:
+  - `paragraph` — full text + ✎ pencil → textarea
+  - `heading` (level 1/2) — styled display + ✎ pencil → input
+  - `bullet_list` / `numbered_list` — rendered items + per-item edit/remove + Add item
+  - `table` — HTML table with tap-to-edit cells + Add row
+  - `spacer` / `divider` — visual only, not editable
+- **`src/components/draft/BlockActionBar.tsx`** — sticky bottom sheet: AI presets + Tell AI custom + manual edit modes
+- **`src/screens/DraftScreen.tsx`** — full edit mode screen with hint text, error banner, Preview toggle
+- **`src/screens/PreviewScreen.tsx`** — ✏️ Edit toggle button navigates back to DraftScreen
 - **`src/App.tsx`** — wired `DraftScreen`, `updateBlock`, `updateEnvelope`; BottomNav hidden on draft screen
 
 ---
@@ -65,24 +71,28 @@
 ## Next Phase
 
 ### Phase 8 — Preview and Export Polish
-- Back button from PreviewScreen → DraftScreen (currently goes to intake)
-- Download button improvements (filename, share sheet on iOS)
+- Download filename improvement (already done: `SVC-{docType}-{date}.pdf`)
+- Share sheet on iOS (Web Share API)
 - Print flow
-- AI provider badge (D021)
+- AI provider badge (D021 — already in PreviewScreen, verify it shows correctly)
+- **Pending:** `IntakeScreen` currently navigates to `'preview'` after draft generation — change to `'draft'`
 
 ---
 
 ## Known Blockers / Open Issues
 
-None. All PDF layout issues resolved. Debug mode cleared.
-
-**Note:** `IntakeScreen` currently navigates to `'preview'` after draft generation. This should be changed to navigate to `'draft'` instead — so the user lands in edit mode first, then chooses to preview.
+**`IntakeScreen` post-draft navigation:** After AI generates a draft, `IntakeScreen` calls `navigate('preview')`. This should be changed to `navigate('draft')` so users land in edit mode first. One-line fix in `src/screens/IntakeScreen.tsx`.
 
 ---
 
 ## Session Log
 
-### Session 8 — 2026-06-06
+### Session 8b — 2026-06-06
+- Fixed PreviewScreen: added ✏️ Edit toggle (back to DraftScreen)
+- Redesigned BlockList: full content visible, type-aware inline editors for all block types
+- Updated DraftScreen: passes onUpdate to BlockList, deselects after AI improve, hint text added
+
+### Session 8a — 2026-06-06
 - Cleared blocker: partitionDebug → partitionBlocks in LetterheadDocument.tsx
 - Built Phase 6: DraftScreen, EnvelopeFields, BlockList, BlockActionBar
 - Built improveBlock AI task (Tier 2 — Gemini standard + Groq fallback)
@@ -99,7 +109,6 @@ None. All PDF layout issues resolved. Debug mode cleared.
 - Added 70% fill guard to `sectionAffinity` rule: prefer small gap over half-empty page
 - Rewrote `LetterheadDocument.tsx`: explicit multi-page rendering via partition output
 - Deleted `src/pdf/useCompactLayout.ts`
-- Added `partitionDebug()` for console logging; wired in `LetterheadDocument.tsx`
 - Updated D023, D024, D025 in decisions.md
 
 ### Session 6 — 2026-06-06
