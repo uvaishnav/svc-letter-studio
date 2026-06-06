@@ -7,6 +7,7 @@ import LetterheadContinuationPage from './LetterheadContinuationPage'
 import Signatory from './Signatory'
 import Watermark from './Watermark'
 import BodyRenderer from './BodyRenderer'
+import { useCompactLayout } from '../../pdf/useCompactLayout'
 import { COLORS, FONTS } from '../../constants/brand'
 
 const S = StyleSheet.create({
@@ -67,6 +68,28 @@ const S = StyleSheet.create({
   },
 })
 
+// ─── Envelope height estimator ────────────────────────────────────────────────
+// Rough estimate so useCompactLayout knows how much first-page space the
+// envelope section consumes. Never scaled — only body content is scaled.
+function estimateEnvelopeHeight(envelope: LetterDraft['envelope']): number {
+  let h = 0
+  if (envelope.date || envelope.refNumber) h += 22   // date/ref row
+  if (envelope.recipient) {
+    h += 14  // "To," label
+    if (envelope.recipient.name)        h += 14
+    if (envelope.recipient.designation) h += 14
+    if (envelope.recipient.company)     h += 14
+    if (envelope.recipient.address)     h += 14
+    h += 10  // recipientBlock marginBottom
+  }
+  if (envelope.subject) {
+    const lines = Math.ceil(envelope.subject.length / 70)
+    h += lines * 14 + 12   // subject rows + margins
+  }
+  h += 20  // divider + envelopeSection marginBottom
+  return h
+}
+
 interface Props {
   draft?: LetterDraft | null
   watermarkEnabled?: boolean
@@ -76,9 +99,16 @@ export default function LetterheadDocument({
   draft,
   watermarkEnabled = DEFAULT_PDF_SETTINGS.watermarkEnabled,
 }: Props) {
-  const envelope = draft?.envelope
-  const blocks   = draft?.blocks ?? []
+  const envelope  = draft?.envelope
+  const blocks    = draft?.blocks ?? []
   const signatory = envelope?.signatory ?? DEFAULT_SIGNATORY
+
+  // ── Widow-page elimination ─────────────────────────────────────────────────
+  // Estimate how much space the envelope takes, then let useCompactLayout
+  // decide if a spacing scale < 1 is needed to avoid a near-empty last page.
+  // Header and Footer are NEVER affected — only inter-block spacing in BodyRenderer.
+  const envelopeHeight = envelope ? estimateEnvelopeHeight(envelope) : 0
+  const { spacingScale } = useCompactLayout(blocks, envelopeHeight)
 
   const envelopeSection = (
     <View style={S.envelopeSection}>
@@ -129,7 +159,7 @@ export default function LetterheadDocument({
     >
       <LetterheadFirstPage watermarkEnabled={watermarkEnabled}>
         {envelopeSection}
-        <BodyRenderer blocks={blocks} />
+        <BodyRenderer blocks={blocks} spacingScale={spacingScale} />
         <Signatory name={signatory.name} designation={signatory.designation} />
       </LetterheadFirstPage>
     </Document>
