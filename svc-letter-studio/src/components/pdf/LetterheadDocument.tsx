@@ -2,11 +2,11 @@ import { Document, View, Text, StyleSheet } from '@react-pdf/renderer'
 import '../../pdf/fonts'
 import { DEFAULT_SIGNATORY, DEFAULT_PDF_SETTINGS } from '../../store/sessionStore'
 import type { LetterDraft } from '../../types/document'
+import { partitionBlocks } from '../../pdf/partitionBlocks'
 import LetterheadFirstPage from './LetterheadFirstPage'
+import LetterheadContinuationPage from './LetterheadContinuationPage'
 import Signatory from './Signatory'
-import Watermark from './Watermark'
 import BodyRenderer from './BodyRenderer'
-import { useCompactLayout } from '../../pdf/useCompactLayout'
 import { COLORS, FONTS } from '../../constants/brand'
 
 const S = StyleSheet.create({
@@ -67,23 +67,24 @@ const S = StyleSheet.create({
   },
 })
 
-// ─── Envelope height estimator ────────────────────────────────────────────
+// ─── Envelope height estimator ─────────────────────────────────────────────────
+// Must stay in sync with the actual rendered envelope section below.
 function estimateEnvelopeHeight(envelope: LetterDraft['envelope']): number {
   let h = 0
-  if (envelope.date || envelope.refNumber) h += 22
+  if (envelope.date || envelope.refNumber) h += 22      // dateRef row
   if (envelope.recipient) {
-    h += 14
+    h += 14                                              // "To," label
     if (envelope.recipient.name)        h += 14
     if (envelope.recipient.designation) h += 14
     if (envelope.recipient.company)     h += 14
     if (envelope.recipient.address)     h += 14
-    h += 10
+    h += 10                                              // recipientBlock marginBottom
   }
   if (envelope.subject) {
     const lines = Math.ceil(envelope.subject.length / 70)
-    h += lines * 14 + 12
+    h += lines * 14 + 12                                 // subjectLine
   }
-  h += 20  // divider + envelopeSection marginBottom
+  h += 20  // divider (0.5) + envelopeSection marginBottom(10) + divider marginBottom(10)
   return h
 }
 
@@ -100,8 +101,10 @@ export default function LetterheadDocument({
   const blocks    = draft?.blocks ?? []
   const signatory = envelope?.signatory ?? DEFAULT_SIGNATORY
 
+  // Partition blocks across pages with orphan/widow control.
+  // spacingScale is always 1.0 — we never compress spacing.
   const envelopeHeight = envelope ? estimateEnvelopeHeight(envelope) : 0
-  const { spacingScale } = useCompactLayout(blocks, envelopeHeight)
+  const { page1, continuations, totalPages } = partitionBlocks(blocks, envelopeHeight)
 
   const envelopeSection = (
     <View style={S.envelopeSection}>
@@ -136,6 +139,8 @@ export default function LetterheadDocument({
     </View>
   )
 
+  const isLastPage = (pageIndex: number) => pageIndex === totalPages - 1
+
   return (
     <Document
       title="Sri Vaishnav Constructions — Letter"
@@ -143,11 +148,33 @@ export default function LetterheadDocument({
       creator="SVC Letter Studio"
       producer="SVC Letter Studio"
     >
+      {/* ── Page 1 ── */}
       <LetterheadFirstPage watermarkEnabled={watermarkEnabled}>
         {envelopeSection}
-        <BodyRenderer blocks={blocks} spacingScale={spacingScale} />
-        <Signatory name={signatory.name} designation={signatory.designation} />
+        <BodyRenderer blocks={page1} spacingScale={1} />
+        {isLastPage(0) && (
+          <Signatory name={signatory.name} designation={signatory.designation} />
+        )}
       </LetterheadFirstPage>
+
+      {/* ── Continuation pages ── */}
+      {continuations.map((pageBlocks, idx) => {
+        const pageNumber = idx + 2  // page 1 is first page
+        const isLast = isLastPage(pageNumber - 1)
+        return (
+          <LetterheadContinuationPage
+            key={pageNumber}
+            pageNumber={pageNumber}
+            totalPages={totalPages}
+            watermarkEnabled={watermarkEnabled}
+          >
+            <BodyRenderer blocks={pageBlocks} spacingScale={1} />
+            {isLast && (
+              <Signatory name={signatory.name} designation={signatory.designation} />
+            )}
+          </LetterheadContinuationPage>
+        )
+      })}
     </Document>
   )
 }
