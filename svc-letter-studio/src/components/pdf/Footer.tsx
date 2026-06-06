@@ -111,7 +111,10 @@ interface FooterProps {
 
 export default function Footer({ pageNumber, totalPages, showPageNumber = false }: FooterProps) {
   return (
-    <View style={S.wrapper} fixed>
+    // No `fixed` prop — Footer only renders on the page it is explicitly placed in.
+    // LetterheadFirstPage places it on page 1 only.
+    // LetterheadContinuationPage can choose whether to include it.
+    <View style={S.wrapper}>
       <View style={S.leftAccent} />
       <View style={S.ruleGold} />
       <View style={S.ruleShadow} />
