@@ -38,7 +38,7 @@ export default function IntakeScreen({
   const [step, setStep]           = useState<IntakeStep>('input');
   const [userText, setUserText]   = useState('');
   const [question, setQuestion]   = useState<string | null>(null);
-  const [answer, setAnswer]       = useState('');
+  const [answer, setAnswer]       = useState('');;
   const [error, setError]         = useState<string | null>(null);
   const ctxRef                    = useRef<PipelineContext | null>(null);
 
@@ -107,8 +107,7 @@ export default function IntakeScreen({
   const showClarification = step === 'input' && question !== null;
 
   return (
-    // pb-24 gives clearance above the bottom nav
-    <div className="flex flex-col" style={{ background: 'var(--color-ivory)', paddingBottom: '96px' }}>
+    <div className="flex flex-col" style={{ background: 'var(--color-ivory)', minHeight: '100%' }}>
 
       {/* Header */}
       <div className="px-5 pt-8 pb-6">
@@ -183,7 +182,7 @@ export default function IntakeScreen({
 
         {/* Input */}
         {step === 'input' && (
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-4" style={{ paddingBottom: '100px' }}>
             {!showClarification ? (
               <>
                 <div
@@ -199,31 +198,13 @@ export default function IntakeScreen({
                     style={{
                       color: 'var(--color-dark-brown)',
                       minHeight: '160px',
-                      fontSize: '16px', // prevents iOS auto-zoom
+                      fontSize: '16px',
                     }}
                     placeholder="e.g. Write a quotation for painting work at Banjara Hills site for Mr. Rajesh Kumar — 3 rooms, ₹45,000 total."
                     value={userText}
                     onChange={e => setUserText(e.target.value)}
-                    onKeyDown={e => {
-                      if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) handleSubmitRequest();
-                    }}
                   />
                 </div>
-                <button
-                  onClick={handleSubmitRequest}
-                  disabled={!userText.trim()}
-                  className="w-full py-4 rounded-2xl font-montserrat font-bold text-sm transition-opacity"
-                  style={{
-                    background: userText.trim() ? 'var(--color-dark-brown)' : 'rgba(59,42,31,0.25)',
-                    color: '#F5F1E8',
-                    opacity: userText.trim() ? 1 : 0.6,
-                  }}
-                >
-                  Generate Document →
-                </button>
-                <p className="text-center font-montserrat text-xs" style={{ color: 'var(--color-dark-brown)', opacity: 0.4 }}>
-                  ⌘ + Enter to submit
-                </p>
               </>
             ) : (
               <>
@@ -257,29 +238,14 @@ export default function IntakeScreen({
                     style={{
                       color: 'var(--color-dark-brown)',
                       minHeight: '80px',
-                      fontSize: '16px', // prevents iOS auto-zoom
+                      fontSize: '16px',
                     }}
                     placeholder="Type your answer…"
                     value={answer}
                     onChange={e => setAnswer(e.target.value)}
-                    onKeyDown={e => {
-                      if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) handleSubmitAnswer();
-                    }}
                     autoFocus
                   />
                 </div>
-                <button
-                  onClick={handleSubmitAnswer}
-                  disabled={!answer.trim()}
-                  className="w-full py-4 rounded-2xl font-montserrat font-bold text-sm transition-opacity"
-                  style={{
-                    background: answer.trim() ? 'var(--color-dark-brown)' : 'rgba(59,42,31,0.25)',
-                    color: '#F5F1E8',
-                    opacity: answer.trim() ? 1 : 0.6,
-                  }}
-                >
-                  Continue →
-                </button>
                 <button
                   onClick={() => { setQuestion(null); setAnswer(''); }}
                   className="w-full py-2 font-montserrat text-sm"
@@ -292,6 +258,40 @@ export default function IntakeScreen({
           </div>
         )}
       </div>
+
+      {/* ── Sticky action bar — always visible above iOS keyboard ── */}
+      {step === 'input' && (
+        <div
+          style={{
+            position: 'fixed',
+            bottom: 0,
+            left: 0,
+            right: 0,
+            padding: '12px 20px',
+            paddingBottom: 'calc(12px + env(safe-area-inset-bottom))',
+            background: 'var(--color-ivory)',
+            borderTop: '1px solid rgba(200,169,106,0.25)',
+            zIndex: 50,
+          }}
+        >
+          <button
+            onClick={showClarification ? handleSubmitAnswer : handleSubmitRequest}
+            disabled={showClarification ? !answer.trim() : !userText.trim()}
+            className="w-full py-4 rounded-2xl font-montserrat font-bold text-sm"
+            style={{
+              background: (showClarification ? answer.trim() : userText.trim())
+                ? 'var(--color-dark-brown)'
+                : 'rgba(59,42,31,0.25)',
+              color: '#F5F1E8',
+              opacity: (showClarification ? answer.trim() : userText.trim()) ? 1 : 0.6,
+              transition: 'opacity 0.2s, background 0.2s',
+            }}
+          >
+            {showClarification ? 'Continue →' : 'Generate Document →'}
+          </button>
+        </div>
+      )}
+
     </div>
   );
 }
