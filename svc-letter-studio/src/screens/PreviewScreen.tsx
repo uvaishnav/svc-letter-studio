@@ -4,7 +4,6 @@ import type { SessionState } from '../store/sessionStore'
 import LetterheadDocument from '../components/pdf/LetterheadDocument'
 import { createEmptyDraft } from '../store/sessionStore'
 
-// ─── Provider Badge ────────────────────────────────────────────────────────
 function ProviderBadge({ provider }: { provider: SessionState['aiProvider'] }) {
   if (!provider) return null
   const isGemini = provider === 'gemini'
@@ -22,7 +21,6 @@ function ProviderBadge({ provider }: { provider: SessionState['aiProvider'] }) {
   )
 }
 
-// ─── PDF Hook wrapper ─────────────────────────────────────────────────────
 interface Props {
   navigate: (s: Screen) => void
   state: SessionState
@@ -35,12 +33,10 @@ export default function PreviewScreen({ navigate, state }: Props) {
     document: <LetterheadDocument draft={draft} />,
   })
 
-  // ─ filename
-  const docType = draft.envelope.documentType?.replace(/_/g, '-') ?? 'document'
+  const docType  = draft.envelope.documentType?.replace(/_/g, '-') ?? 'document'
   const dateStr  = new Date().toISOString().slice(0, 10)
   const filename = `SVC-${docType}-${dateStr}.pdf`
 
-  // ─ download handler — uses the same blob, no cross-partition issue
   function handleDownload() {
     if (!instance.url) return
     const a = document.createElement('a')
@@ -49,23 +45,30 @@ export default function PreviewScreen({ navigate, state }: Props) {
     a.click()
   }
 
+  // Decide where Back goes: if there's a draft, go to edit mode; otherwise intake
+  const backTarget: Screen = state.draft ? 'draft' : 'intake'
+
   return (
     <div
       className="flex flex-col"
       style={{ minHeight: '100dvh', background: '#1C1C1E' }}
     >
-
-      {/* ── Top bar ───────────────────────────────────────────────── */}
+      {/* ── Top bar ── */}
       <div
         className="flex items-center justify-between px-4 pt-12 pb-3"
         style={{ background: '#1C1C1E' }}
       >
+        {/* Edit toggle */}
         <button
-          onClick={() => navigate('intake')}
-          className="font-montserrat text-sm font-medium"
-          style={{ color: 'rgba(255,255,255,0.6)' }}
+          onClick={() => navigate(backTarget)}
+          className="font-montserrat text-sm font-bold px-3 py-2 rounded-xl"
+          style={{
+            background: 'rgba(200,169,106,0.15)',
+            color: '#C8A96A',
+            border: '1.5px solid rgba(200,169,106,0.4)',
+          }}
         >
-          ← Back
+          ✏️ Edit
         </button>
 
         <ProviderBadge provider={state.aiProvider} />
@@ -79,11 +82,11 @@ export default function PreviewScreen({ navigate, state }: Props) {
             color: '#fff',
           }}
         >
-          {instance.loading ? 'Building…' : 'Download'}
+          {instance.loading ? 'Building…' : '⬇ Download'}
         </button>
       </div>
 
-      {/* ── PDF Preview area ─────────────────────────────────────────── */}
+      {/* ── PDF Preview area ── */}
       <div className="flex-1 px-3 pb-6">
         {instance.loading && (
           <div className="flex flex-col items-center justify-center h-64 gap-4">
@@ -112,7 +115,6 @@ export default function PreviewScreen({ navigate, state }: Props) {
           </div>
         )}
 
-        {/* iframe is immune to Blob URL cross-partition Chrome policy */}
         {instance.url && !instance.error && (
           <iframe
             src={instance.url}
@@ -127,7 +129,6 @@ export default function PreviewScreen({ navigate, state }: Props) {
           />
         )}
 
-        {/* iOS Safari fallback: if iframe fails to show PDF inline, offer download */}
         {instance.url && !instance.error && (
           <p
             className="text-center font-montserrat text-xs mt-3"

@@ -57,6 +57,7 @@ export default function DraftScreen({ navigate, state, updateBlock, updateEnvelo
     try {
       const improved = await improveBlock({ block, action, customInstruction })
       updateBlock(index, improved)
+      setSelectedIndex(null)
     } catch (err) {
       setImproveError('AI improve failed. Please try again.')
       console.error('[DraftScreen] improveBlock error:', err)
@@ -77,7 +78,8 @@ export default function DraftScreen({ navigate, state, updateBlock, updateEnvelo
       background: 'var(--color-ivory)',
       display: 'flex',
       flexDirection: 'column',
-      paddingBottom: selectedBlock ? 260 : 80,
+      // bottom padding grows when action bar is open
+      paddingBottom: selectedBlock ? 280 : 80,
     }}>
       {/* ── Top bar ── */}
       <div style={{
@@ -90,18 +92,18 @@ export default function DraftScreen({ navigate, state, updateBlock, updateEnvelo
           onClick={() => navigate('intake')}
           style={{
             background: 'none', border: 'none', cursor: 'pointer',
-            color: '#C8A96A', fontFamily: 'Montserrat, sans-serif',
-            fontSize: 13, fontWeight: 700, padding: 0,
+            color: 'rgba(245,241,232,0.5)', fontFamily: 'Montserrat, sans-serif',
+            fontSize: 13, fontWeight: 600, padding: 0,
           }}
         >
-          ← Back
+          ← Intake
         </button>
 
         <span style={{
           fontFamily: 'Montserrat, sans-serif',
           fontSize: 14, fontWeight: 700, color: '#F5F1E8',
         }}>
-          Edit Draft
+          ✏️ Edit Draft
         </span>
 
         {/* Preview toggle */}
@@ -141,16 +143,27 @@ export default function DraftScreen({ navigate, state, updateBlock, updateEnvelo
         {/* Envelope fields */}
         <EnvelopeFields envelope={draft.envelope} onUpdate={updateEnvelope} />
 
-        {/* Body blocks */}
+        {/* Body section header */}
         <div style={{
           fontFamily: 'Montserrat, sans-serif',
           fontSize: 11, fontWeight: 700,
           color: '#C8A96A', textTransform: 'uppercase',
           letterSpacing: '0.06em', marginBottom: 8,
         }}>
-          Body ({draft.blocks.length} blocks)
+          Body · {draft.blocks.length} blocks
         </div>
 
+        {/* Hint text */}
+        <p style={{
+          fontFamily: 'Montserrat, sans-serif',
+          fontSize: 11, color: '#A0978B',
+          margin: '0 0 10px',
+          lineHeight: 1.5,
+        }}>
+          Tap a block to select it for AI actions. Use ✎ inline to edit text directly.
+        </p>
+
+        {/* AI improve loading indicator */}
         {isImproving && (
           <div style={{
             textAlign: 'center', padding: '12px 0', marginBottom: 8,
@@ -160,14 +173,16 @@ export default function DraftScreen({ navigate, state, updateBlock, updateEnvelo
           </div>
         )}
 
+        {/* Block list with inline editors */}
         <BlockList
           blocks={draft.blocks}
           selectedIndex={selectedIndex}
           onSelect={idx => setSelectedIndex(idx === selectedIndex ? null : idx)}
+          onUpdate={handleManualEdit}
         />
       </div>
 
-      {/* ── Block action bar (slides in when a block is selected) ── */}
+      {/* ── Block action bar (AI actions, slides in when block selected) ── */}
       {selectedBlock !== null && selectedIndex !== null && (
         <BlockActionBar
           block={selectedBlock}
