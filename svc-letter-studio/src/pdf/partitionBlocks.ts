@@ -28,7 +28,6 @@ export function estimateBlockHeight(block: ContentBlock): number {
     case 'heading':
       // level 1: fontSize:12, marginTop:8,  marginBottom:6  → 26pt
       // level 2: fontSize:10.5, marginTop:6, marginBottom:4  → 20.5pt
-      // Previously heading1 was calculated as 14+10+6=30pt (WRONG — used wrong fontSize+margins)
       return block.level === 2
         ? 10.5 + 6 + 4      // 20.5pt
         : 12   + 8 + 6      // 26pt
@@ -59,10 +58,14 @@ export function estimateBlockHeight(block: ContentBlock): number {
   }
 }
 
-// ─── keepWithNext ────────────────────────────────────────────────────────────
-// A heading stranded at the bottom of a page (with its body on the next page)
-// looks broken. Rule: if the LAST block of a page is a heading, move it to
-// the start of the next page so it always travels with its content.
+// ─── Helpers ────────────────────────────────────────────────────────────────
+function isListBlock(b: ContentBlock): boolean {
+  return b.type === 'bullet_list' || b.type === 'numbered_list' || b.type === 'table'
+}
+
+// ─── Step 3a: keepWithNext ──────────────────────────────────────────────────
+// A heading stranded at the bottom of a page looks broken.
+// Rule: if the last block on a page is a heading, move it to the next page.
 function applyKeepWithNext(pages: ContentBlock[][]): void {
   for (let i = 0; i < pages.length - 1; i++) {
     if (pages[i].length === 0) continue
@@ -70,11 +73,48 @@ function applyKeepWithNext(pages: ContentBlock[][]): void {
     if (last.type === 'heading') {
       pages[i].pop()
       pages[i + 1].unshift(last)
-      // After moving, check if new last block is also a heading (edge case: two headings)
+      // Edge case: two consecutive headings at bottom
       if (pages[i].length > 0 && pages[i][pages[i].length - 1].type === 'heading') {
-        const prev = pages[i].pop()!
-        pages[i + 1].unshift(prev)
+        pages[i + 1].unshift(pages[i].pop()!)
       }
+    }
+  }
+}
+
+// ─── Step 3b: sectionAffinity ───────────────────────────────────────────────
+//
+// Problem this solves:
+//   Page N ends: ... heading → para (intro text)
+//   Page N+1 starts: bullet_list / table  (the actual body of that section)
+//
+// This looks like a chopped section: the heading and its intro are on one page,
+// the body (list/table) is on the next page, with a large blank gap below the intro.
+//
+// Rule: if the LAST TWO blocks on page[i] are [heading, para] and the FIRST block
+// on page[i+1] is a list or table, move BOTH the heading and para to page[i+1].
+// The section then starts fresh on the next page as a complete visual unit.
+function applySectionAffinity(pages: ContentBlock[][]): void {
+  for (let i = 0; i < pages.length - 1; i++) {
+    const pg = pages[i]
+    const next = pages[i + 1]
+    if (pg.length < 2 || next.length === 0) continue
+
+    const secondLast = pg[pg.length - 2]
+    const last       = pg[pg.length - 1]
+    const firstNext  = next[0]
+
+    // Pattern: ...heading, para/any  |  list/table, ...
+    if (
+      secondLast.type === 'heading' &&
+      last.type !== 'heading' &&          // last is intro (not another heading)
+      !isListBlock(last) &&               // last is NOT itself the list (already covered by keepWithNext)
+      isListBlock(firstNext)              // next page opens with the section body
+    ) {
+      // Move both heading and intro to next page
+      const intro   = pg.pop()!          // remove intro para
+      const heading = pg.pop()!          // remove heading
+      next.unshift(intro)                // prepend intro to next page
+      next.unshift(heading)              // prepend heading before intro
     }
   }
 }
@@ -119,12 +159,14 @@ export function partitionBlocks(
   const lastCap = pages.length === 1 ? PAGE1_BODY_HEIGHT - envelopeHeight : CONT_BODY_HEIGHT
   const lastContentH = pages[pages.length - 1].reduce((s, b) => s + estimateBlockHeight(b), 0)
   if (lastContentH + SIGNATORY_HEIGHT > lastCap && pages[pages.length - 1].length > 0) {
-    const overflow = pages[pages.length - 1].pop()!
-    pages.push([overflow])
+    pages.push([pages[pages.length - 1].pop()!])
   }
 
-  // ── Step 3: keepWithNext — headings travel with the block that follows them ──
+  // ── Step 3a: keepWithNext — bare heading at bottom travels with its content ──
   applyKeepWithNext(pages)
+
+  // ── Step 3b: sectionAffinity — heading+intro don't strand their list on next page ──
+  applySectionAffinity(pages)
 
   // ── Step 4 & 5: orphan + thin-page check ────────────────────────────
   let changed = true
@@ -136,16 +178,14 @@ export function partitionBlocks(
       const nextContentH = pages[i + 1].reduce((s, b) => s + estimateBlockHeight(b), 0)
 
       if (nextContentH < ORPHAN_THRESHOLD) {
-        const moved = pages[i].pop()!
-        pages[i + 1].unshift(moved)
+        pages[i + 1].unshift(pages[i].pop()!)
         changed = true
         continue
       }
 
       const visualH = nextContentH + (isNextLast ? SIGNATORY_HEIGHT : 0)
       if (visualH < MIN_PAGE_FILL) {
-        const moved = pages[i].pop()!
-        pages[i + 1].unshift(moved)
+        pages[i + 1].unshift(pages[i].pop()!)
         changed = true
       }
     }
@@ -163,8 +203,7 @@ export function partitionBlocks(
 }
 
 // ─── Debug logger ────────────────────────────────────────────────────────────
-// Call partitionDebug() in LetterheadDocument instead of partitionBlocks()
-// to see detailed logs in the browser console. Remove when done.
+// Use in LetterheadDocument during debugging. Switch to partitionBlocks() for production.
 export function partitionDebug(
   blocks: ContentBlock[],
   envelopeHeight: number
@@ -189,23 +228,22 @@ export function partitionDebug(
           : b.type === 'table'
             ? `table(${b.rows.length}rows×${b.headers.length}cols)`
             : b.type
-    const overflow = cumH > p1cap ? ` ⚠️ OVER p1 cap by ${(cumH - p1cap).toFixed(1)}pt` : ''
-    console.log(`  [${i}] ${label.padEnd(35)} h=${h.toFixed(1)}pt  cumH=${cumH.toFixed(1)}pt${overflow}`)
+    const over = cumH > p1cap ? ` ⚠️ OVER p1 cap by ${(cumH - p1cap).toFixed(1)}pt` : ''
+    console.log(`  [${i}] ${label.padEnd(35)} h=${h.toFixed(1)}pt  cumH=${cumH.toFixed(1)}pt${over}`)
   })
 
   const result = partitionBlocks(blocks, envelopeHeight)
 
   console.log('--- Result ---')
   console.log(`Total pages: ${result.totalPages}`)
-  const allPages = [result.page1, ...result.continuations]
-  allPages.forEach((pageBlocks, pi) => {
-    const contentH = pageBlocks.reduce((s, b) => s + estimateBlockHeight(b), 0)
-    const sig = pi === allPages.length - 1 ? SIGNATORY_HEIGHT : 0
-    const cap2 = pi === 0 ? PAGE1_BODY_HEIGHT - envelopeHeight : CONT_BODY_HEIGHT
-    console.log(`  Page ${pi + 1}: ${pageBlocks.length} blocks, content=${contentH.toFixed(1)}pt + sig=${sig}pt = ${(contentH + sig).toFixed(1)}pt / cap=${cap2.toFixed(1)}pt`)
-    pageBlocks.forEach((b, bi) => {
-      const label = b.type === 'paragraph' ? `para(${b.text.length}ch)` : b.type
-      console.log(`    [${bi}] ${label}  h=${estimateBlockHeight(b).toFixed(1)}pt`)
+  ;[result.page1, ...result.continuations].forEach((pg, pi) => {
+    const contentH = pg.reduce((s, b) => s + estimateBlockHeight(b), 0)
+    const sig = pi === result.totalPages - 1 ? SIGNATORY_HEIGHT : 0
+    const c   = pi === 0 ? PAGE1_BODY_HEIGHT - envelopeHeight : CONT_BODY_HEIGHT
+    console.log(`  Page ${pi + 1}: ${pg.length} blocks, content=${contentH.toFixed(1)}pt + sig=${sig}pt = ${(contentH+sig).toFixed(1)}pt / cap=${c.toFixed(1)}pt`)
+    pg.forEach((b, bi) => {
+      const lbl = b.type === 'paragraph' ? `para(${b.text.length}ch)` : b.type
+      console.log(`    [${bi}] ${lbl}  h=${estimateBlockHeight(b).toFixed(1)}pt`)
     })
   })
   console.groupEnd()
