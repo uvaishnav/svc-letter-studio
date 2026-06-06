@@ -98,7 +98,7 @@ export default function IntakeScreen({
     try {
       const output = await draftPipeline(ctx);
       setDraft(output.draft, output.provider);
-      navigate('preview');
+      navigate('draft');
     } catch (err) {
       console.error(err);
       setError('Could not generate the document. Please check your API keys and try again.');
