@@ -133,7 +133,7 @@
 
 ## D019 — Groq Fallback Model
 **Decision:** Use `llama-3.3-70b-versatile` on Groq with `response_format: { type: 'json_object' }`.
-**Reason:** Strong instruction-following for structured JSON. Groq's inference speed makes it a viable real-time fallback.
+**Reason:** Strong instruction-following for structured JSON. Groq’s inference speed makes it a viable real-time fallback.
 **Status:** Final
 
 ---
@@ -173,23 +173,33 @@
 ---
 
 ## D023 — Multi-page PDF Layout Strategy
-**Decision:** Use `@react-pdf/renderer`’s natural single-page auto-overflow for multi-page letters. This is the correct and intended behaviour.
+**Decision:** Use explicit block-level pagination via `src/pdf/partitionBlocks.ts`. `LetterheadDocument` renders one `LetterheadFirstPage` + N `LetterheadContinuationPage` elements explicitly. `@react-pdf/renderer` auto-overflow is NOT relied upon.
 
-**How it works:**
-- `LetterheadDocument` renders a single `<LetterheadFirstPage>` containing envelope + body blocks + signatory.
-- When content exceeds one page, `@react-pdf/renderer` auto-generates overflow pages. These pages are plain ivory — no header, no footer — which is acceptable and intentional.
-- `Footer` uses `fixed` + `render={({ pageNumber: pn }) => pn > 1 ? null : ...}` — renders only on page 1. ✅
-- `Signatory` is flow-positioned — follows content to whatever page it ends on. ✅
-- `Watermark` uses `fixed` — auto-repeats on all pages including overflow pages. ✅
+**Supersedes:** Previous D023 which described auto-overflow as the final strategy.
 
-**`LetterheadContinuationPage` status:**
-- Exists as a future-use component (built session 1) for explicit branded continuation pages if ever required.
-- Currently imported but unused in `LetterheadDocument.tsx` (dead import — harmless).
-- If used in future: its fonts must be updated from PDFKit built-ins (`Helvetica-Bold`, `Helvetica`) to registered Montserrat/Playfair fonts.
-- Do NOT wire this unless explicitly decided — auto-overflow is sufficient.
+**Why changed:** Auto-overflow produced two bad outcomes:
+1. `flex:1` on `contentArea` expanded the container beyond its intended 648.14pt height, causing content to visually touch the footer gold line.
+2. When a few lines spilled to page 2, there was no mechanism to move whole logical blocks — resulting in 2-3 orphan lines alone on a continuation page.
 
-**`useCompactLayout` known inaccuracy (minor):**
-- `estimateTotalHeight()` applies `scale` to full `SIGNATORY_HEIGHT`, but in `Signatory.tsx` only `marginTop` actually scales. The box, name, and designation heights are fixed. This causes slight over-estimation of compaction needed.
-- Impossibility guard prevents wrong compression regardless, so this is non-critical.
+**How `partitionBlocks` works:**
+1. Greedy fill — pack blocks into pages, respecting height caps (648.14pt page 1, 757.89pt continuation)
+2. Signatory overflow — if `lastBlock + SIGNATORY_HEIGHT > cap`, lastBlock moves to next page
+3. Orphan check — if next page content < 55pt (~3 lines), move prev page’s last block forward
+4. Thin-page check — if last page visual (content + signatory) < 80pt, move another block forward
+5. Empty-page cleanup
 
+**Spacing:** `spacingScale` is always `1.0`. No compression ever applied. Blocks are moved between pages instead.
+
+**Status:** Final
+
+---
+
+## D024 — Continuation Page Design
+**Decision:** Blank ivory page with `marginTop:36pt`, `marginBottom:48pt`, watermark, and page number (`FONTS.body`, 8pt, `brownMuted`) at `position:absolute, bottom:18, right:36`.
+- No top bar, no brand name, no footer component on continuation pages.
+- `marginTop:36` provides staple clearance + breathing room (matches side margins).
+- `marginBottom:48` provides bottom breathing room; page number sits inside this zone.
+- Available content area: 757.89 × 523.28pt.
+
+**Reason:** Clean, professional, print-friendly. Branding is established on page 1. Repetitive brand elements on continuation pages add visual noise and waste ink.
 **Status:** Final
