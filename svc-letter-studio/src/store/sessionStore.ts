@@ -1,53 +1,46 @@
-// In-memory session state — no localStorage, no persistence
-import { useState } from 'react'
-import type { Screen } from '../App'
-import type { DEFAULT_SIGNATORY, DEFAULT_PDF_SETTINGS } from '../constants/defaults'
+import type { LetterDraft, DocumentType } from '../types/document'
 
-export interface DocumentContext {
-  type: string
-  rawBrief: string
-  fields: Record<string, string>
-  conversationHistory: { role: 'user' | 'ai'; content: string }[]
+// ─── Default Values ───────────────────────────────────────────────────────────
+
+export const DEFAULT_SIGNATORY = {
+  name: 'UPPALAPATI SUREKHA',
+  designation: 'Proprietor',
 }
 
-export interface PDFSettings {
-  watermarkEnabled: boolean
-  paperSize: 'A4'
-  marginMm: number
+export const DEFAULT_PDF_SETTINGS = {
+  watermarkEnabled: true,
 }
+
+export function createEmptyDraft(type: DocumentType = 'letter'): LetterDraft {
+  return {
+    envelope: {
+      documentType: type,
+      date: new Date().toLocaleDateString('en-IN', {
+        day: '2-digit',
+        month: 'long',
+        year: 'numeric',
+      }),
+      signatory: { ...DEFAULT_SIGNATORY },
+    },
+    blocks: [],
+  }
+}
+
+// ─── Session State ────────────────────────────────────────────────────────────
+// In-memory only — no localStorage (D004)
 
 export interface SessionState {
-  screen: Screen
-  documentContext: DocumentContext
-  draftContent: string
-  pdfSettings: PDFSettings
-  signatoryName: string
-  signatoryDesignation: string
+  draft: LetterDraft | null
+  rawUserInput: string        // freeform text from IntakeScreen
+  uploadedContent: string     // parsed text from .docx/.pdf upload
+  isGenerating: boolean
+  watermarkEnabled: boolean
 }
 
-export const initialState: SessionState = {
-  screen: 'home',
-  documentContext: {
-    type: '',
-    rawBrief: '',
-    fields: {},
-    conversationHistory: [],
-  },
-  draftContent: '',
-  pdfSettings: {
-    watermarkEnabled: true,
-    paperSize: 'A4',
-    marginMm: 20,
-  },
-  signatoryName:        'UPPALAPATI SUREKHA',
-  signatoryDesignation: 'Proprietor',
-}
-
-export function useSessionStore() {
-  const [state, setState] = useState<SessionState>(initialState)
-
-  const update = (partial: Partial<SessionState>) =>
-    setState(prev => ({ ...prev, ...partial }))
-
-  return { state, update }
+export const initialSessionState: SessionState = {
+  draft: null,
+  rawUserInput: '',
+  uploadedContent: '',
+  isGenerating: false,
+  watermarkEnabled: DEFAULT_PDF_SETTINGS.watermarkEnabled,
 }
