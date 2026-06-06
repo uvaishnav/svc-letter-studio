@@ -111,31 +111,36 @@ interface FooterProps {
 
 export default function Footer({ pageNumber, totalPages, showPageNumber = false }: FooterProps) {
   return (
-    // No `fixed` prop — Footer only renders on the page it is explicitly placed in.
-    // LetterheadFirstPage places it on page 1 only.
-    // LetterheadContinuationPage can choose whether to include it.
-    <View style={S.wrapper}>
-      <View style={S.leftAccent} />
-      <View style={S.ruleGold} />
-      <View style={S.ruleShadow} />
-      <View style={S.container}>
-        <View style={S.topRow}>
-          <Text style={S.contactItem}>☎  {CONTACT.phone}</Text>
-          {CONTACT.gstin ? (
-            <View style={S.gstinRow}>
-              <Text style={S.gstinLabel}>GSTIN</Text>
-              <Text style={S.dot}>:</Text>
-              <Text style={S.gstinValue}>{CONTACT.gstin}</Text>
+    // fixed renders this on every page; render prop limits it to page 1 only.
+    // Page 2+ (overflow pages) get no footer — clean blank continuation.
+    <View
+      style={S.wrapper}
+      fixed
+      render={({ pageNumber: pn }) => (pn > 1 ? null : (
+        <>
+          <View style={S.leftAccent} />
+          <View style={S.ruleGold} />
+          <View style={S.ruleShadow} />
+          <View style={S.container}>
+            <View style={S.topRow}>
+              <Text style={S.contactItem}>☎  {CONTACT.phone}</Text>
+              {CONTACT.gstin ? (
+                <View style={S.gstinRow}>
+                  <Text style={S.gstinLabel}>GSTIN</Text>
+                  <Text style={S.dot}>:</Text>
+                  <Text style={S.gstinValue}>{CONTACT.gstin}</Text>
+                </View>
+              ) : showPageNumber && pageNumber != null ? (
+                <Text style={S.pageNum}>{pageNumber} / {totalPages}</Text>
+              ) : null}
+              <Text style={S.contactItem}>✉  {CONTACT.email}</Text>
             </View>
-          ) : showPageNumber && pageNumber != null ? (
-            <Text style={S.pageNum}>{pageNumber} / {totalPages}</Text>
-          ) : null}
-          <Text style={S.contactItem}>✉  {CONTACT.email}</Text>
-        </View>
-        <View style={S.bottomRow}>
-          <Text style={S.address}>{CONTACT.address}</Text>
-        </View>
-      </View>
-    </View>
+            <View style={S.bottomRow}>
+              <Text style={S.address}>{CONTACT.address}</Text>
+            </View>
+          </View>
+        </>
+      ))}
+    />
   )
 }
