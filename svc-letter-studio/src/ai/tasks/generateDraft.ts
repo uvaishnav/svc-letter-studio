@@ -8,10 +8,19 @@ import type { PipelineContext, AIOutput } from '../types';
 import type { LetterDraft } from '../../types/document';
 import { DEFAULT_SIGNATORY } from '../../constants/defaults';
 
-// ─── Normalizer ────────────────────────────────────────────────────────────────────────
-// Safety net: AI may still return the old flat shape or use "body" instead of
-// "blocks". This normalizes both shapes into the canonical LetterDraft shape.
+// ─── Normalizer ─────────────────────────────────────────────────────────────────────
+// Safety net: AI may return old flat shape or use "body" instead of "blocks".
+// Also handles Groq sometimes wrapping output in a top-level key.
 function normalizeDraft(raw: any): LetterDraft {
+  // Groq sometimes wraps: { "letter": { envelope, blocks } } or { "draft": {...} }
+  // Unwrap if the top-level object has exactly one key and no "envelope" directly
+  if (!raw.envelope && !raw.blocks && !raw.body) {
+    const keys = Object.keys(raw);
+    if (keys.length === 1) {
+      raw = raw[keys[0]];
+    }
+  }
+
   const envelope = raw.envelope ?? {};
 
   // Normalize "body" -> "blocks"
@@ -45,7 +54,7 @@ function normalizeDraft(raw: any): LetterDraft {
   return { envelope, blocks };
 }
 
-// ─── Main task ────────────────────────────────────────────────────────────────────────
+// ─── Main task ──────────────────────────────────────────────────────────────────────
 export async function generateDraftFromContext(
   ctx: PipelineContext
 ): Promise<AIOutput> {
@@ -53,9 +62,7 @@ export async function generateDraftFromContext(
   const user   = buildDraftUserPrompt(ctx);
 
   console.log('[generateDraft] ▶ Starting. documentType =', ctx.documentType);
-  console.log('[generateDraft] clarificationQuestion =', ctx.clarificationQuestion);
   console.log('[generateDraft] clarificationAnswer =', ctx.clarificationAnswer);
-  console.log('[generateDraft] detectedFields =', ctx.detectedFields);
 
   // ─ Try Gemini premium first
   try {
@@ -64,47 +71,47 @@ export async function generateDraftFromContext(
     const rawText = await gemini.call(system, user, 'premium');
 
     console.log('[generateDraft] Gemini raw length:', rawText.length);
-    console.log('[generateDraft] Gemini raw (first 600):', rawText.slice(0, 600));
 
-    const parsed   = JSON.parse(rawText);
-    const draft    = normalizeDraft(parsed);
-
-    console.log('[generateDraft] After normalize — blocks count:', draft.blocks?.length);
-    console.log('[generateDraft] After normalize — block types:', draft.blocks?.map((b: any) => b.type));
-    console.log('[generateDraft] After normalize — recipient:', draft.envelope.recipient);
-    console.log('[generateDraft] After normalize — signatory:', draft.envelope.signatory);
-    console.log('[generateDraft] After normalize — date:', draft.envelope.date);
+    const parsed = JSON.parse(rawText);
+    const draft  = normalizeDraft(parsed);
 
     if (!draft.envelope || !draft.blocks?.length) {
-      console.error('[generateDraft] ❌ Invalid shape after normalize:', draft);
       throw new Error('Invalid shape after normalize');
     }
 
-    console.log('[generateDraft] ✅ Gemini success.');
+    console.log('[generateDraft] ✅ Gemini success. blocks:', draft.blocks.length);
     return { draft, provider: 'gemini' };
+
   } catch (geminiErr) {
     console.warn('[generateDraft] ⚠️ Gemini premium failed, falling back to Groq:', geminiErr);
   }
 
   // ─ Groq fallback
+  // IMPORTANT: call without the `true` flag — get raw string back, then parse
+  // ourselves so normalizeDraft can handle shape differences.
+  // Calling with `true` returns an already-parsed object; JSON.parse on an
+  // object throws SyntaxError before normalizeDraft ever runs.
   try {
     console.log('[generateDraft] Calling Groq fallback...');
     const groq    = new GroqProvider();
-    const rawText = await groq.call(system, user, true) as string;
-    const parsed  = JSON.parse(rawText);
-    const draft   = normalizeDraft(parsed);
+    const rawText = await groq.call(system, user) as string;  // returns string
+    console.log('[generateDraft] Groq raw (first 400):', rawText.slice(0, 400));
 
-    console.log('[generateDraft] Groq — blocks count:', draft.blocks?.length);
+    const parsed = JSON.parse(rawText);
+    const draft  = normalizeDraft(parsed);
 
     if (!draft.envelope || !draft.blocks?.length) {
       console.error('[generateDraft] ❌ Groq invalid shape after normalize:', draft);
-      throw new Error('Groq invalid shape');
+      throw new Error('Groq: invalid draft shape after normalize');
     }
 
-    console.log('[generateDraft] ✅ Groq success.');
+    console.log('[generateDraft] ✅ Groq success. blocks:', draft.blocks.length);
     return { draft, provider: 'groq' };
+
   } catch (groqErr) {
     console.error('[generateDraft] ❌ Groq also failed:', groqErr);
-    throw groqErr;
+    throw new Error(
+      `Draft generation failed on both Gemini and Groq. Last error: ${(groqErr as Error).message}`
+    );
   }
 }
