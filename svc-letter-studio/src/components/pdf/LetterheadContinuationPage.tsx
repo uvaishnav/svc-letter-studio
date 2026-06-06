@@ -4,14 +4,15 @@ import Watermark from './Watermark'
 
 // ─── Continuation page geometry (A4 = 841.89pt tall) ───────────────────────
 // No header or footer branding — clean blank page.
-// marginTop:  36pt — breathing room + staple clearance (matches side margins)
+// marginTop:  50pt — deliberate breathing room; signals content continuation
+//                    (increased from 36pt — 36 felt too tight)
 // marginBot:  48pt — breathing room; page number sits inside this zone
 // marginLeft: 36pt
 // marginRight: 36pt
-// Available content height = 841.89 - 36 - 48 = 757.89pt
+// Available content height = 841.89 - 50 - 48 = 743.89pt
 // Available content width  = 595.28 - 36 - 36 = 523.28pt
 
-const CONT_CONTENT_MAX_HEIGHT = 757.89  // 841.89 - 36 - 48
+export const CONT_CONTENT_MAX_HEIGHT = 743.89  // 841.89 - 50 - 48
 
 const S = StyleSheet.create({
   page: {
@@ -21,7 +22,7 @@ const S = StyleSheet.create({
     maxHeight: CONT_CONTENT_MAX_HEIGHT,
     marginLeft: 36,
     marginRight: 36,
-    marginTop: 36,
+    marginTop: 50,
     marginBottom: 48,
   },
   // Page number — absolute, sits inside the 48pt bottom margin zone
