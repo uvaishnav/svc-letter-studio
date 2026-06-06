@@ -32,15 +32,24 @@
 - `Montserrat-SemiBold.ttf`
 - `Montserrat-Bold.ttf`
 
+### Phase 3 — Document Schema and Pipeline ✅
+- `src/types/document.ts` — `DocumentType` union, `ContentBlock` discriminated union (7 block types), `DocumentEnvelope`, `LetterDraft`, `REQUIRED_ENVELOPE_FIELDS`, `getMissingFields()`
+- `src/components/pdf/BodyRenderer.tsx` — renders any array of `ContentBlock` into PDF elements: paragraph, heading (2 levels), bullet list, numbered list, table (zebra + gold borders), spacer, divider
+- `src/store/sessionStore.ts` — updated `SessionState` shape (`draft: LetterDraft | null`), `createEmptyDraft()`, `useSessionStore()` hook
+- `src/components/pdf/LetterheadDocument.tsx` — consumes `LetterDraft`: renders envelope section (date, ref, recipient, subject) + `BodyRenderer` blocks + `Signatory`
+- `src/screens/PreviewScreen.tsx` — wired to new `SessionState` shape; download filename uses doc type + date
+- `src/constants/brand.ts` — added `COLORS.text`, `COLORS.darkBrown`, `FONTS.bodySemiBold`
+
 ---
 
 ## Next Phase
 
-### Phase 3 — Document Schema and Pipeline
-- Field schema definition
-- Document types (quotation, letter, notice, etc.)
-- Required fields logic
-- Draft state shape
+### Phase 4 — AI Provider Abstraction
+- Gemini Flash adapter
+- Groq fallback adapter
+- Common `generateDraft(input)` interface in `src/ai/adapter.ts`
+- Fallback routing logic
+- Environment variable wiring (`VITE_GEMINI_API_KEY`, `VITE_GROQ_API_KEY`)
 
 ---
 
@@ -69,3 +78,9 @@
 - Fixed: Signatory now absolutely positioned to bottom of content area — always at bottom on empty letterhead
 - Registered `Playfair Display SC` family in `fonts.ts`
 - Updated `docs/FONTS.md` with Playfair Display SC instructions
+
+### Session 4 — 2026-06-06
+- Decided: free-form block-based body instead of rigid field schema (see D017)
+- Built Phase 3: document schema, ContentBlock union, LetterDraft, BodyRenderer, sessionStore update
+- Fixed: `brand.ts` missing `COLORS.text`, `COLORS.darkBrown`, `FONTS.bodySemiBold`
+- Wired `LetterheadDocument` and `PreviewScreen` to new `LetterDraft` shape

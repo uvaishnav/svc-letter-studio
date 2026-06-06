@@ -1,50 +1,48 @@
 # Changelog
 
-## [Phase 2 — Session 3 Redesign] — 2026-06-05
+## Session 4 — 2026-06-06
+
+### Added
+- `src/types/document.ts` — `DocumentType` union (8 types), `ContentBlock` discriminated union (paragraph, heading, bullet\_list, numbered\_list, table, spacer, divider), `DocumentEnvelope`, `LetterDraft`, `REQUIRED_ENVELOPE_FIELDS`, `getMissingFields()`
+- `src/components/pdf/BodyRenderer.tsx` — renders `ContentBlock[]` into `@react-pdf/renderer` elements; tables use dark-brown header row + zebra striping + gold borders
 
 ### Changed
-- `Header.tsx` — Full premium redesign: ivory background (no dark band), logo 80px, `SRI VAISHNAV` in Playfair Display SC Bold 28pt tight letterSpacing, `— CONSTRUCTIONS —` with gold dash lines, tagline in Montserrat 5.5pt muted, full-width gold hairline rule at bottom
-- `Footer.tsx` — Switched from dark brown band to ivory background: gold hairline rule on top, left accent bar, phone | GSTIN | email top row, address centered below. Zero heavy ink usage.
-- `Watermark.tsx` — Reduced size 260px → 220px, opacity 3.5% → 3.2%
-- `Signatory.tsx` — Removed stamp badge container (physical stamps used). Changed layout to `position: absolute, bottom: 0` so signatory always anchors to bottom of content area regardless of content length.
-- `src/pdf/fonts.ts` — Replaced Cormorant Garamond + Cinzel with Playfair Display (Regular + Bold) and Playfair Display SC (Bold). Added `Font.register()` for `'Playfair Display SC'` family.
-- `src/constants/brand.ts` — Updated with real contact data: phone `7989230912`, email `rambabuut@gmail.com`, address `2-14, Godavarru, Kankipadu Mandal, Krishna District, Andhra Pradesh – 521151`, GSTIN `37ADUPU2453N1ZK`, tagline `ENGINEERING • INFRASTRUCTURE • CIVIL WORKS`
-- `docs/FONTS.md` — Updated required files list and download instructions for Playfair Display SC
-
-### Fixed
-- Signatory was floating at top of content area when page was empty — now always pinned to bottom above footer
-- Font family mismatch error `Font family not registered: Playfair Display SC` — resolved by registering family name exactly matching usage in `Header.tsx`
+- `src/store/sessionStore.ts` — replaced flat state shape with `SessionState { draft: LetterDraft | null, rawUserInput, uploadedContent, isGenerating, watermarkEnabled }`; added `createEmptyDraft()` and `useSessionStore()` hook
+- `src/components/pdf/LetterheadDocument.tsx` — now accepts `draft: LetterDraft` prop; renders envelope section (date/ref row, recipient block, subject line, gold divider) then `<BodyRenderer blocks={blocks} />` then `<Signatory>`
+- `src/screens/PreviewScreen.tsx` — wired to new `SessionState`; download filename now `svc-{type}-{date}.pdf`
+- `src/constants/brand.ts` — added `COLORS.text` (`#2C1F16`), `COLORS.darkBrown` (alias for brown), `FONTS.bodySemiBold` (`'Montserrat-SemiBold'`)
 
 ---
 
-## [Phase 2 — Bug Fix Session] — 2026-06-04
+## Session 3 — 2026-06-05
 
-### Fixed
-- `main.tsx` — Replaced bare `import { Buffer } from 'buffer'` with inline IIFE shim on `globalThis`
-- `vite.config.ts` — Added `define` block: `global`, `process.env`, `process.browser`
-- `LetterheadFirstPage.tsx` — Removed `fontFamily: 'Montserrat'` from `<Page>` style
-- `LetterheadContinuationPage.tsx` — Same fix as above
-- `PreviewScreen.tsx` — Removed `PDFDownloadLink`, replaced with `URL.createObjectURL(blob)` button
-- `PreviewScreen.tsx` — Removed `isMobile()` check, `<object>` shown on all devices
-- `App.tsx` — Dynamic background: dark on preview screen, ivory elsewhere
-- `index.html` — Added `mobile-web-app-capable` meta tag
-
-### Added
-- `src/pdf/fonts.ts` — Font.register() for Cormorant Garamond + Montserrat from `public/fonts/`
-- `docs/FONTS.md` — Font download and setup instructions
-
-### Changed (Redesign)
-- `Header.tsx` — Gold top edge + dark brown band, Cormorant Garamond brand name
-- `Footer.tsx` — Dark brown band, two-row contact layout
-- `Watermark.tsx` — Logo image at 3.5% opacity
-- `Signatory.tsx` — Right-aligned signature block with gold stamp badge
+### Changed
+- Redesigned header: ivory bg, Playfair Display SC wordmark, gold hairline rule (removed dark band)
+- Redesigned footer: ivory bg, gold hairline rule, two-row layout (contact row + address row)
+- `brand.ts`: real phone, email, address, GSTIN, corrected tagline
+- `fonts.ts`: registered Playfair Display SC Bold family
+- `Signatory`: removed stamp container, absolute positioning to bottom of content area
+- `docs/FONTS.md`: updated with Playfair Display SC instructions
 
 ---
 
-## [Phase 2 — Initial Build] — 2026-06-03
+## Session 2 — 2026-06-04
+
+### Fixed
+- `Buffer is not defined` — inline IIFE shim in `main.tsx`
+- `Font family not registered: Montserrat` — TTF files + `Font.register()` in `fonts.ts`
+- Export button unclickable + double render crash — removed `PDFDownloadLink`, single `BlobProvider`
+- `vite.config.ts` externalizing `buffer` package — switched to `define` block
+- Preview not showing on mobile — `<object>` on all devices
+- Ivory bleed-through below preview — dark background on preview screen (D013)
+- `apple-mobile-web-app-capable` deprecation warning — switched to `mobile-web-app-capable`
+
+---
+
+## Session 1 — 2026-06-03
 
 ### Added
-- `vite.config.ts`, `src/index.css`, `src/main.tsx`, `src/App.tsx`, `src/App.css`
+- `vite.config.ts`, `src/index.css`, `src/main.tsx`, `src/App.tsx`
 - `src/components/pdf/LetterheadDocument.tsx`
 - `src/components/pdf/LetterheadFirstPage.tsx`
 - `src/components/pdf/LetterheadContinuationPage.tsx`
@@ -52,4 +50,10 @@
 - `src/components/pdf/Footer.tsx`
 - `src/components/pdf/Watermark.tsx`
 - `src/components/pdf/Signatory.tsx`
-- `src/screens/PreviewScreen.tsx`
+- `src/components/ui/BottomNav.tsx`
+- `src/screens/HomeScreen.tsx`, `IntakeScreen.tsx`, `DraftScreen.tsx`, `PreviewScreen.tsx`, `SettingsScreen.tsx`
+- `src/store/sessionStore.ts`
+- `src/constants/brand.ts`
+- `src/pdf/fonts.ts`
+- `public/manifest.webmanifest`
+- `docs/FONTS.md`

@@ -111,3 +111,11 @@
 **Decision:** `Signatory` uses `position: absolute, bottom: 0` within the content area.
 **Reason:** Ensures signatory always appears at the bottom of the page regardless of content length. On empty letterheads it sits just above the footer. Content area has `marginBottom: 65` which clears the footer height.
 **Status:** Final
+
+---
+
+## D017 — Document Body Architecture
+**Decision:** Free-form `ContentBlock[]` array for body. Fixed `DocumentEnvelope` for layout-critical fields (date, recipient, subject, ref, signatory).
+**Reason:** A rigid field schema would prevent the AI from choosing the best visual structure (tables, bullets, paragraphs) per document type. The block model gives the AI full compositional freedom while keeping envelope fields in deterministic positions on the letterhead.
+**Block types:** `paragraph`, `heading` (levels 1–2), `bullet_list`, `numbered_list`, `table`, `spacer`, `divider`.
+**Status:** Final
