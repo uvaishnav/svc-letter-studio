@@ -1,118 +1,110 @@
 # Architecture
 
-## Project Structure
+## Repository Structure
 
 ```
 svc-letter-studio/
 ├── public/
-│   ├── fonts/                       # Self-hosted TTF files (see docs/FONTS.md)
-│   ├── icons/                       # PWA icons
+│   ├── fonts/               # Self-hosted TTF font files (see docs/FONTS.md)
+│   ├── icons/               # PWA icons
 │   └── manifest.webmanifest
 ├── src/
 │   ├── ai/
-│   │   ├── types.ts                 # AIInput, AIOutput, AIProvider, TaskTier, PipelineContext
-│   │   ├── models.ts                # geminiUrl(tier), geminiModelName(tier) — tier → model resolver
-│   │   ├── prompts.ts               # Task-specific prompt builders (classify, clarify, draft)
-│   │   ├── gemini.ts                # GeminiProvider — generateDraft() + call(system, user, tier)
-│   │   ├── groq.ts                  # GroqProvider — generateDraft() + call(system, user)
-│   │   ├── adapter.ts               # Pipeline orchestrator — ONLY file components import
+│   │   ├── adapter.ts         # Pipeline orchestrator: classifyPipeline, clarifyPipeline, draftPipeline
+│   │   ├── gemini.ts          # GeminiProvider — .call(system, user, tier)
+│   │   ├── groq.ts            # GroqProvider — .call(system, user)
+│   │   ├── models.ts          # TaskTier → Gemini model name/URL mapping
+│   │   ├── prompts.ts         # Task-specific prompt builders
+│   │   ├── types.ts           # AIInput, AIOutput, AIProvider, TaskTier, PipelineContext
 │   │   └── tasks/
-│   │       ├── classifyIntent.ts    # Tier 1: intent detection + field extraction
-│   │       ├── generateClarification.ts  # Tier 1: one clarifying question
-│   │       └── generateDraft.ts     # Tier 3: full LetterDraft generation
+│   │       ├── classifyIntent.ts
+│   │       ├── generateClarification.ts
+│   │       └── generateDraft.ts
 │   ├── components/
 │   │   └── pdf/
-│   │       ├── LetterheadDocument.tsx
-│   │       ├── LetterheadFirstPage.tsx
-│   │       ├── LetterheadContinuationPage.tsx
-│   │       ├── Header.tsx
-│   │       ├── Footer.tsx
-│   │       ├── Watermark.tsx
-│   │       ├── Signatory.tsx
-│   │       └── BodyRenderer.tsx     # Renders ContentBlock[] into PDF elements
+│   │       ├── BodyRenderer.tsx        # Renders ContentBlock[] → PDF elements
+│   │       ├── Footer.tsx              # Fixed footer, page 1 only
+│   │       ├── Header.tsx              # Ivory bg, logo, brand name, gold rule
+│   │       ├── LetterheadContinuationPage.tsx  # Blank ivory page; exports CONT_CONTENT_MAX_HEIGHT
+│   │       ├── LetterheadDocument.tsx  # Root PDF; calls partitionBlocks; renders all pages
+│   │       ├── LetterheadFirstPage.tsx # Page 1; maxHeight:648.14pt content area
+│   │       ├── Signatory.tsx           # Flow-positioned; appears on last page after content
+│   │       └── Watermark.tsx           # Fixed; repeats on all pages
 │   ├── constants/
-│   │   └── brand.ts                 # Colors, fonts, contact info, tagline
+│   │   └── brand.ts               # COLORS, FONTS, brand text (phone, GSTIN, address, tagline)
 │   ├── pdf/
-│   │   └── fonts.ts                 # Font.register() calls for @react-pdf/renderer
+│   │   ├── fonts.ts               # Font.register() calls for all TTF families
+│   │   └── partitionBlocks.ts     # Pure pagination: ContentBlock[] → { page1, continuations[], totalPages }
 │   ├── screens/
-│   │   ├── HomeScreen.tsx
-│   │   ├── IntakeScreen.tsx         # Phase 5 ✅ — full AI intake + clarification pipeline
-│   │   ├── PreviewScreen.tsx
-│   │   └── SettingsScreen.tsx
+│   │   ├── IntakeScreen.tsx       # Freeform input → AI pipeline → draft
+│   │   └── PreviewScreen.tsx      # BlobProvider, inline preview, download
 │   ├── store/
-│   │   └── sessionStore.ts          # SessionState (+ pipelineCtx), useSessionStore(), createEmptyDraft()
+│   │   └── sessionStore.ts        # Zustand store: draft, pipelineCtx, aiProvider
 │   ├── types/
-│   │   └── document.ts              # DocumentType, ContentBlock union, DocumentEnvelope, LetterDraft
-│   ├── App.tsx                      # Screen router + BottomNav visibility + bg color
-│   ├── main.tsx                     # Buffer polyfill IIFE (must stay first) + React root
-│   └── index.css                    # Tailwind v4 + Google Fonts (web UI only) + CSS vars
+│   │   └── document.ts            # DocumentType, ContentBlock (7 variants), DocumentEnvelope, LetterDraft
+│   ├── App.tsx                    # Screen router, background switcher
+│   └── main.tsx                   # Buffer polyfill shim (must be first), app mount
 ├── docs/
-│   ├── prd.md
-│   ├── progress.md
-│   ├── decisions.md
-│   ├── architecture.md
+│   ├── architecture.md            # This file
 │   ├── changelog.md
-│   └── FONTS.md
-├── .env.example                     # Documents VITE_GEMINI_API_KEY, VITE_GROQ_API_KEY
+│   ├── decisions.md
+│   ├── FONTS.md
+│   ├── prd.md
+│   └── progress.md
+├── index.html
 ├── vite.config.ts
-├── tailwind.config.ts
+├── .env.example
 └── package.json
 ```
 
-## Tiered AI Call Flow (Phase 5+)
+## Key Data Flow
 
 ```
 IntakeScreen
-     │
-     ▼
-classifyPipeline(rawInput)           ← Tier 1: gemini-2.0-flash
-     │  returns PipelineContext
-     ▼
-clarifyPipeline(ctx)                 ← Tier 1: gemini-2.0-flash (only if missingFields > 0)
-     │  returns { ctx, question }
-     │
-     ├── question? → show to user → user answers → enrich ctx
-     │
-     ▼
-draftPipeline(ctx)                   ← Tier 3: gemini-3.5-flash
-     │  receives FULL enriched PipelineContext (no information loss)
-     ▼
-AIOutput { draft: LetterDraft, provider }
-     │
-     ▼
-sessionStore  →  PreviewScreen
+  └→ adapter.ts: classifyPipeline() → Tier 1 (gemini-2.0-flash)
+  └→ adapter.ts: clarifyPipeline()  → Tier 1 (gemini-2.0-flash)  [optional]
+  └→ adapter.ts: draftPipeline()    → Tier 3 (gemini-3.5-flash)
+        └→ LetterDraft → sessionStore
+
+PreviewScreen
+  └→ sessionStore.draft
+  └→ LetterheadDocument
+        └→ estimateEnvelopeHeight()
+        └→ partitionBlocks(blocks, envelopeHeight)
+              └→ { page1, continuations[], totalPages }
+        └→ <LetterheadFirstPage>  ← page1 blocks + signatory (if last)
+        └→ <LetterheadContinuationPage> × N  ← continuation blocks + signatory (if last)
 ```
 
-## Fallback Strategy (all tiers)
+## Page Geometry
+
+| Page | Height cap | Width | Notes |
+|------|-----------|-------|-------|
+| Page 1 content area | `648.14pt` | `523.28pt` | `841.89 − 108.75 (header) − 20 (marginTop) − 65 (marginBottom)` |
+| Continuation content area | `743.89pt` | `523.28pt` | `841.89 − 50 (marginTop) − 48 (marginBottom)` |
+| Effective page 1 body | `648.14 − envelopeHeight` | `523.28pt` | Envelope occupies top of page 1 content area |
+
+## Partition Rules (priority order)
+
+| Step | Rule | Conditional? |
+|------|------|--------------|
+| 1 | Greedy fill | — |
+| 2 | Signatory overflow | Always |
+| 3a | `keepWithNext` — lone heading at bottom | **Unconditional** |
+| 3b | `sectionAffinity` — heading+intro reunited with section body | 70% fill guard |
+| 4 | Orphan check (< 55pt on next page) | Always |
+| 5 | Thin-page check (< 80pt visual on last page) | Always |
+| 6 | Empty-page cleanup | — |
+
+## Environment Variables
 
 ```
-Tier 1/2/3 Gemini call
-     │
-     ├── success → return result
-     └── error   → Groq llama-3.3-70b-versatile (same prompt, JSON mode)
+VITE_GEMINI_API_KEY=   # Required — Gemini Flash API key
+VITE_GROQ_API_KEY=     # Required — Groq API key (fallback)
 ```
 
-## Data Flow
+## Deleted Files
 
-```
-User text input (IntakeScreen)
-     │
- PipelineContext { rawInput }
-     │  + classifyIntent (Tier 1)
- PipelineContext { rawInput, documentType, detectedFields, missingFields }
-     │  + clarification (Tier 1, optional)
- PipelineContext { ..., clarificationQuestion, clarificationAnswer }
-     │  + generateDraft (Tier 3)
- LetterDraft { envelope: DocumentEnvelope, body: ContentBlock[] }
-     │
- sessionStore.draft
-     │
- LetterheadDocument (PDF)
-```
-
-## Key Rules
-- Buffer polyfill IIFE in `main.tsx` must always be the first executed code
-- All AI calls must go through `src/ai/adapter.ts` — never import gemini.ts, groq.ts, or task files directly in components
-- No localStorage / sessionStorage anywhere
-- Fonts must be TTF, self-hosted in `public/fonts/`
-- Tier assignment lives in `src/ai/models.ts` — never hardcode model names elsewhere
+| File | Reason |
+|------|--------|
+| `src/pdf/useCompactLayout.ts` | Replaced by `partitionBlocks.ts`. Spacing compression approach abandoned — blocks are moved between pages instead. |

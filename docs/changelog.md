@@ -1,87 +1,80 @@
 # Changelog
 
-## Session 7 — 2026-06-06 (continued)
+## Session 7 — 2026-06-06 (pagination & layout)
+
+### Added
+- `src/pdf/partitionBlocks.ts` — pure pagination function: `partitionBlocks(blocks, envelopeHeight) → { page1, continuations[], totalPages }`
+  - **Step 1:** Greedy fill — pack blocks into pages up to per-page height caps
+  - **Step 2:** Signatory overflow — if last block + signatory (92pt) exceed cap, last block moves to new page
+  - **Step 3a:** `keepWithNext` — lone heading at bottom of page always moves to next page (unconditional)
+  - **Step 3b:** `sectionAffinity` — if page ends with [heading → para] and next page opens with list/table, move both to next page. **Guarded by 70% fill rule**: if the move would leave the source page below 70% of its cap, skip — prefer a small visual gap over a half-empty page
+  - **Step 4:** Orphan check — if next page content < 55pt (~3 lines), move prev page’s last block forward
+  - **Step 5:** Thin-page check — if last page visual (content + signatory) < 80pt, move another block forward
+  - **Step 6:** Empty-page cleanup
+  - `partitionDebug()` export — same as `partitionBlocks()` but logs every block height, cumulative height, overflow flags, fill%, and final page assignments to console
+  - `MIN_FILL_RATIO = 0.70` — fill guard for sectionAffinity moves
+  - Imports `CONT_CONTENT_MAX_HEIGHT` from `LetterheadContinuationPage.tsx` — single source of truth
+
+### Changed
+- `src/components/pdf/LetterheadFirstPage.tsx`
+  - Replaced `flex:1` with `maxHeight: 648.14` on `contentArea`
+  - Root cause of footer overlap: `flex:1` expanded container beyond intended 648.14pt
+  - Added detailed geometry comment
+
+- `src/components/pdf/LetterheadContinuationPage.tsx` — complete rewrite
+  - Removed top bar, brand elements, Helvetica fonts
+  - New design: plain ivory, watermark, `marginTop: 50pt` (increased from 36pt for deliberate breathing room), `marginBottom: 48pt`, page number at bottom-right
+  - Exports `CONT_CONTENT_MAX_HEIGHT = 743.89pt` constant (imported by `partitionBlocks.ts`)
+  - Available content: 743.89 × 523.28pt
+
+- `src/components/pdf/LetterheadDocument.tsx` — rewritten
+  - Calls `partitionBlocks()` / `partitionDebug()` to get page assignments
+  - Renders explicit `LetterheadFirstPage` + N `LetterheadContinuationPage` elements
+  - Signatory only on last page
+  - `spacingScale` always 1.0 — no compression
+
+### Deleted
+- `src/pdf/useCompactLayout.ts` — removed entirely; replaced by partition approach
+
+### Fixed (estimator corrections)
+- Heading 1 height: `14+10+6=30pt` → `12+8+6=26pt` (matched to `BodyRenderer BASE`)
+- List container: removed false `+4pt` padding (BodyRenderer `View` has no container padding)
+
+---
+
+## Session 7 — 2026-06-06 (layout audit, earlier in session)
 
 ### Fixed
-- `src/components/pdf/LetterheadFirstPage.tsx` — replaced `flex:1` with `maxHeight: 648.14` on `contentArea`
-  - Root cause: `flex:1` was expanding the content container to fill all remaining page height after the header, giving content a taller box than expected. Content then flowed to the bottom of that expanded box — visually touching the footer gold line with no breathing gap.
-  - Fix: `maxHeight: 648.14pt` (= 841.89 − 108.75 − 20 − 65) hard-caps the content area. Content can never overflow into the footer zone.
-  - Added detailed geometry comment to file explaining every measurement.
+- `src/components/pdf/LetterheadFirstPage.tsx` — `flex:1` → `maxHeight:648.14` (footer overlap root cause)
 
-### Redesigned
-- `src/components/pdf/LetterheadContinuationPage.tsx` — complete rewrite
-  - Removed: top bar (brand name + page label), `Footer` component import, Helvetica built-in fonts
-  - New design: plain ivory page, watermark, `marginTop: 36pt`, `marginBottom: 48pt`, page number (`FONTS.body`, 8pt, `COLORS.brownMuted`) at `position: absolute, bottom: 18, right: 36`
-  - Available content area: 757.89pt tall × 523.28pt wide
-  - Geometry comment added to file
+### Redesigned  
+- `src/components/pdf/LetterheadContinuationPage.tsx` — plain ivory page, correct fonts, page number
 
-### Cleaned
-- `src/components/pdf/LetterheadDocument.tsx` — removed dead `LetterheadContinuationPage` import
-
-### Documentation Corrections (hallucination audit)
-- `docs/progress.md` — removed false blockers from session 6:
-  - Removed: “Page 2 has no header/branding — raw overflow page looks bare” (this is correct intended behaviour)
-  - Removed: “LetterheadContinuationPage is not yet wired” (it is intentionally not wired — future-use component only)
-  - Replaced with accurate description of current multi-page behaviour and real known inaccuracies
-- `docs/decisions.md` — corrected D023:
-  - Rewritten to accurately describe auto-overflow as the correct and final strategy
-  - Documented `LetterheadContinuationPage` as future-use only; noted its font issue (now fixed)
-  - Documented `SIGNATORY_HEIGHT * scale` inaccuracy in `useCompactLayout` (minor, non-critical)
-
-### Verified from source (no code changes in audit phase)
-- `Signatory.tsx` — confirmed flow layout, marginTop:24, correct
-- `Footer.tsx` — confirmed `fixed` + `render` prop hides footer on page 2+, correct
-- `Watermark.tsx` — confirmed `fixed` prop repeats watermark on all pages, correct
-- `useCompactLayout.ts` — confirmed `PAGE_BODY_HEIGHT = 648.14pt` matches actual geometry exactly
-
-### Next
-- Build `src/pdf/partitionBlocks.ts` — smart block-level pagination with orphan/widow control
-- Wire `LetterheadContinuationPage` into `LetterheadDocument` using partition output
-- Remove `useCompactLayout` compression strategy (replaced by partition approach)
+### Documentation Corrections
+- `docs/progress.md` — removed hallucinated blockers from session 6 log
+- `docs/decisions.md` — corrected D023 to reflect auto-overflow was interim, partition is final
 
 ---
 
 ## Session 6 — 2026-06-06
 
 ### Fixed
-- `src/components/pdf/Footer.tsx` — added `render={({ pageNumber }) => pageNumber > 1 ? null : <.../>}` to `fixed` View; footer now renders on page 1 only, invisible on all overflow pages
-- `src/components/pdf/Signatory.tsx` — changed from `position: absolute, bottom: 0` to flow layout (`marginTop: 24, alignItems: flex-end`); signatory now renders after the last content block on whichever page the content ends
-- `src/pdf/useCompactLayout.ts` — recalibrated constants from real component source:
-  - `CHARS_PER_LINE`: 65 → 80 (actual geometry: 523pt content width ÷ ~6.5pt/char for Montserrat 10pt)
-  - Added `SIGNATORY_HEIGHT = 92pt` to `estimateTotalHeight()` (signatory is now a flow element)
-  - `WIDOW_THRESHOLD`: 0.60 → 0.50
-  - Fixed comment accuracy throughout
-
-### Decisions
-- D016: Updated — Signatory now flow-positioned, not absolute (supersedes session 3 decision)
-- D023: New — multi-page PDF layout strategy documented (later corrected in session 7)
+- `src/components/pdf/Footer.tsx` — `render` prop hides footer on pages 2+
+- `src/components/pdf/Signatory.tsx` — flow layout, `marginTop:24`; follows content to correct page
+- `src/pdf/useCompactLayout.ts` — recalibrated `CHARS_PER_LINE` (65→80), added `SIGNATORY_HEIGHT=92pt`, adjusted `WIDOW_THRESHOLD` (0.60→0.50)
 
 ---
 
 ## Session 5 — 2026-06-06
 
 ### Added
-- `src/ai/types.ts` — `TaskTier` type (`lightweight | standard | premium`), `PipelineContext` interface
-- `src/ai/models.ts` — `geminiUrl(tier)` and `geminiModelName(tier)` — single source of truth for tier → model mapping
-- `src/ai/tasks/classifyIntent.ts` — Tier 1 task: classifies document type, extracts detected fields, identifies missing fields
-- `src/ai/tasks/generateClarification.ts` — Tier 1 task: generates exactly one clarifying question when critical fields are missing
-- `src/ai/tasks/generateDraft.ts` — Tier 3 task: generates full `LetterDraft` from enriched `PipelineContext`
-- `src/screens/IntakeScreen.tsx` — full intake UI: freeform textarea → classify → optional clarification → generate → navigate to preview
-  - Loading states per pipeline stage with stage message + tier badge
-  - Error state with retry
-  - Clarification step shows detected document type pill + AI question
+- `src/ai/types.ts` — `TaskTier`, `PipelineContext`
+- `src/ai/models.ts` — tier → model mapping
+- `src/ai/tasks/classifyIntent.ts`, `generateClarification.ts`, `generateDraft.ts`
+- `src/screens/IntakeScreen.tsx` — full pipeline UI
 
 ### Changed
-- `src/ai/types.ts` — added `TaskTier`, `PipelineContext` alongside existing `AIInput`, `AIOutput`, `AIProvider`
-- `src/ai/prompts.ts` — replaced generic `buildSystemPrompt/buildUserPrompt` with task-specific builders
-- `src/ai/gemini.ts` — added public `.call(system, user, tier)` method
-- `src/ai/groq.ts` — added public `.call(system, user)` method
-- `src/ai/adapter.ts` — added 3-stage pipeline orchestrators
-- `src/store/sessionStore.ts` — added `pipelineCtx` field
-
-### Decisions
-- D022: Tiered AI model routing
-- D020: Updated — prompts now task-specific
+- `src/ai/prompts.ts`, `gemini.ts`, `groq.ts`, `adapter.ts`, `sessionStore.ts` — tiered pipeline wiring
 
 ---
 
@@ -89,10 +82,7 @@
 
 ### Added
 - `src/types/document.ts`, `src/components/pdf/BodyRenderer.tsx`, `src/store/sessionStore.ts` update
-- `src/components/pdf/LetterheadDocument.tsx` wired to `LetterDraft`
-- `src/screens/PreviewScreen.tsx` wired to new session shape
-- `src/ai/types.ts`, `src/ai/prompts.ts`, `src/ai/gemini.ts`, `src/ai/groq.ts`, `src/ai/adapter.ts`
-- `.env.example`
+- `src/ai/types.ts`, `prompts.ts`, `gemini.ts`, `groq.ts`, `adapter.ts`, `.env.example`
 
 ### Fixed
 - `src/constants/brand.ts` — missing `COLORS.text`, `COLORS.darkBrown`, `FONTS.bodySemiBold`
@@ -102,7 +92,7 @@
 ## Session 3 — 2026-06-05
 
 ### Changed
-- Header, Footer redesigned; brand.ts updated; Playfair Display SC registered
+- Header, Footer redesigned; `brand.ts` updated; Playfair Display SC registered
 
 ### Removed
 - Stamp container from Signatory
