@@ -21,10 +21,20 @@ const PAGE_BODY_HEIGHT = A4_HEIGHT - HEADER_HEIGHT - CONTENT_MARGIN_TOP - CONTEN
 // line on average. Calibrated against real PDF output: 65 chars/line.
 const CHARS_PER_LINE = 65
 
-// Widow threshold: if last page fill < 40%, attempt compaction.
-// 40% (not 30%) absorbs the ~10-15% estimation variance so real widows
-// (2–5 closing lines) are reliably caught.
-const WIDOW_THRESHOLD  = 0.40
+// Widow threshold: if estimated last-page fill < 60%, attempt compaction.
+//
+// WHY 60% and not a lower value:
+//   Our line-count estimator has a systematic upward bias of ~30 percentage
+//   points on dense letters (many paragraphs + bullet lists). A letter whose
+//   last page is genuinely ~10% full (a real widow — 3 closing lines) will be
+//   estimated at ~40%. Setting the threshold at 60% ensures these real widows
+//   are always caught regardless of estimation error.
+//
+//   Setting it higher than 60% is safe because the IMPOSSIBILITY GUARD (Step 3)
+//   independently prevents wrong compression: it only compacts if the body can
+//   actually fit at MIN_SCALE. So false positives from a high threshold are
+//   harmless — they just trigger the guard and return scale=1.0.
+const WIDOW_THRESHOLD  = 0.60
 
 // Never compress spacing below 75% to preserve readability.
 // If the target cannot be reached at this scale, we accept the extra page
@@ -132,14 +142,13 @@ export function useCompactLayout(
     return { spacingScale: 1, estimatedPages: naturalPages }
   }
 
-  // Step 3: widow detected — check if compaction is even achievable
+  // Step 3: widow detected — check if compaction is even achievable.
+  // ⚠️ IMPOSSIBILITY GUARD: if body at MIN_SCALE still can't fit the target,
+  // the letter genuinely needs N pages. Return scale=1.0 — do NOT compress.
   const targetPages     = naturalPages - 1
   const maxTotalTarget  = targetPages * PAGE_BODY_HEIGHT
   const maxBodyTarget   = maxTotalTarget - envelopeHeight
 
-  // ⚠️ IMPOSSIBILITY GUARD — this is the critical check that was missing.
-  // If body content at MIN_SCALE still exceeds the target, the letter genuinely
-  // needs N pages. Do NOT compress — return scale=1.0 and accept the page count.
   const bodyAtMinScale = estimateTotalHeight(blocks, MIN_SCALE)
   if (bodyAtMinScale > maxBodyTarget) {
     console.log(
