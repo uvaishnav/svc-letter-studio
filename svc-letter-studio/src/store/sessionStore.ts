@@ -2,38 +2,49 @@ import { useState, useCallback } from 'react';
 import type { LetterDraft } from '../types/document';
 import type { PipelineContext } from '../ai/types';
 
+// ─── Shared defaults (used by PDF components) ─────────────────────────────────
+
+export const DEFAULT_SIGNATORY = {
+  name:        'UPPALAPATI SUREKHA',
+  designation: 'Proprietor',
+};
+
+export const DEFAULT_PDF_SETTINGS = {
+  watermarkEnabled: true,
+};
+
 // ─── Session State ────────────────────────────────────────────────────────────
 // In-memory only — no localStorage (D004)
 
 export interface SessionState {
-  draft: LetterDraft | null;
-  rawUserInput: string;
+  draft:           LetterDraft | null;
+  rawUserInput:    string;
   uploadedContent: string;
-  aiProvider: 'gemini' | 'groq' | null;
-  pipelineCtx: PipelineContext | null;   // enriched context travels with session
+  aiProvider:      'gemini' | 'groq' | null;
+  pipelineCtx:     PipelineContext | null;
 }
 
 function initialState(): SessionState {
   return {
-    draft:          null,
-    rawUserInput:   '',
+    draft:           null,
+    rawUserInput:    '',
     uploadedContent: '',
-    aiProvider:     null,
-    pipelineCtx:    null,
+    aiProvider:      null,
+    pipelineCtx:     null,
   };
 }
 
 export function createEmptyDraft(): LetterDraft {
   return {
     envelope: {
-      documentType:          'general_letter',
-      date:                  new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' }),
-      refNumber:             null,
-      recipientName:         '',
-      recipientAddress:      '',
-      subject:               '',
-      signatoryName:         'UPPALAPATI SUREKHA',
-      signatoryDesignation:  'Proprietor',
+      documentType:         'general_letter',
+      date:                 new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' }),
+      refNumber:            null,
+      recipientName:        '',
+      recipientAddress:     '',
+      subject:              '',
+      signatoryName:        DEFAULT_SIGNATORY.name,
+      signatoryDesignation: DEFAULT_SIGNATORY.designation,
     },
     body: [],
   };
