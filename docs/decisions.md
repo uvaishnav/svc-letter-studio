@@ -174,3 +174,17 @@
 **Reason:** AI already produces a good initial draft. Re-generating everything for a small change is wasteful and slow. Per-block actions (Shorten / Expand / Formal / Rewrite / Custom) give precise, fast edits.
 **Tier:** Tier 2 (standard — `gemini-2.5-flash`)
 **Status:** Final
+
+---
+
+## D028 — Upload & Convert Pipeline Reuse
+**Decision:** `UploadScreen` extracts text from .docx (mammoth) or .pdf (pdfjs-dist), then passes extracted text directly into the existing `classifyIntent → generateClarification → generateDraft` pipeline. Zero new AI code — 100% reuse of the same pipeline as IntakeScreen.
+**Reason:** The extracted text is semantically equivalent to a user's freeform brief. The AI pipeline is document-agnostic by design.
+**Status:** Final
+
+---
+
+## D029 — Blank Letterhead as Dedicated Screen
+**Decision:** Blank Letterhead is a dedicated `BlankScreen.tsx` (not an inline one-tap action on HomeScreen). It shows a BlobProvider loading state and a Download button.
+**Reason:** BlobProvider is async — there is always a brief render delay. Showing a dedicated screen with a loading spinner is more honest UX than a frozen tap on the home screen.
+**Status:** Final

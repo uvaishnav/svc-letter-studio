@@ -41,7 +41,7 @@
 - `src/screens/IntakeScreen.tsx` — full pipeline UI with stage loading, clarification step, error handling
 - `PipelineContext` in `sessionStore.ts`
 
-### Phase 7 — Smart Pagination ✅
+### Phase 7-PDF — Smart Pagination ✅
 - **Root cause fixed:** `LetterheadFirstPage` `flex:1` → `maxHeight:648.14`
 - **Continuation page rebuilt:** blank ivory, `marginTop:50pt`, `marginBottom:48pt`, watermark, page number bottom-right. Exports `CONT_CONTENT_MAX_HEIGHT` constant.
 - **`src/pdf/partitionBlocks.ts`** — pure partition function with 6-step pipeline
@@ -78,6 +78,14 @@
   - `src/ai/tasks/generateDraft.ts` — removed two hardcoded signatory string literals; now imports `DEFAULT_SIGNATORY` from `constants/defaults`
 - **To update contact/signatory values:** edit `src/constants/brand.ts` (CONTACT) and `src/constants/defaults.ts` (DEFAULT_SIGNATORY)
 
+### Phase 7 (PRD) — Upload & Convert + Home Screen Restoration ✅
+- **`src/screens/HomeScreen.tsx`** — fully restored: SVC brand header, 3 entry cards (Create with AI, Upload & Convert, Blank Letterhead)
+- **`src/screens/UploadScreen.tsx`** — new: file picker (.docx/.pdf), extraction, AI pipeline, clarification step, error states
+- **`src/screens/BlankScreen.tsx`** — new: instant blank letterhead PDF download via BlobProvider
+- **`src/utils/extractText.ts`** — new: `extractTextFromFile()` using mammoth (.docx) + pdfjs-dist (.pdf), graceful error + warning messages
+- **`src/App.tsx`** — `Screen` type extended to `'home' | 'intake' | 'upload' | 'blank' | 'draft' | 'preview' | 'settings'`; BlankScreen and UploadScreen wired; BottomNav hidden on upload screen
+- **Dependencies to install:** `npm install mammoth pdfjs-dist`
+
 ---
 
 ## Next Phase
@@ -86,17 +94,29 @@
 - iPhone testing (real device)
 - Error states: AI failure, empty input, network offline
 - Edge cases: very long letters, tables with many rows, missing recipient
+- Verify upload flow end-to-end on device (.docx and .pdf)
 - Final review and release
 
 ---
 
 ## Known Blockers / Open Issues
 
-None.
+⚠️ **Manual step required:** Run `npm install mammoth pdfjs-dist` in the project root before building.
 
 ---
 
 ## Session Log
+
+### Session 11 — 2026-06-07 (Phase 7 Upload & Convert + Home Screen)
+- Identified that HomeScreen was missing Upload & Convert entry and Blank Letterhead routing
+- Identified that Phase 7 (PRD) Upload & Convert flow was never built
+- Restored HomeScreen with full branded 3-card layout
+- Built UploadScreen: file picker, extractText utility, AI pipeline reuse (identical to IntakeScreen), clarification step, error states
+- Built BlankScreen: instant blank letterhead PDF via BlobProvider
+- Built extractText.ts: mammoth for .docx, pdfjs-dist for .pdf, graceful error/warning handling
+- Updated App.tsx: Screen type extended, all new screens wired, BottomNav hidden on upload
+- Decision D028 recorded: Upload & Convert route reuses 100% of existing AI + PDF pipeline
+- Decision D029 recorded: Blank Letterhead is a dedicated screen (BlankScreen.tsx) not a one-tap inline action
 
 ### Session 10 — 2026-06-07 (Phase 9)
 - Audited all hardcoded values for header/footer/signatory

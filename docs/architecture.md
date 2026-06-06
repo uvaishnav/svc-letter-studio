@@ -5,6 +5,8 @@
 - `@react-pdf/renderer` v4 — PDF generation
 - Tailwind CSS v4 via `@tailwindcss/vite`
 - `vite-plugin-pwa` — PWA manifest + service worker
+- `mammoth` — .docx text extraction
+- `pdfjs-dist` — browser-safe PDF text extraction
 - Gemini Flash (primary AI) + Groq (fallback AI)
 - In-memory state only — no database, no localStorage
 
@@ -13,13 +15,18 @@
 ## Screen Flow
 
 ```
-home → intake → [AI pipeline] → draft ⇄ preview
-                                   ↑
-                            (toggle button)
+home ──► intake  ──► [AI pipeline] ──► draft ⇄ preview
+     │
+     ├──► upload ──► [AI pipeline] ──► draft ⇄ preview
+     │                ↑
+     │         (same pipeline as intake)
+     │
+     └──► blank  ──► [BlobProvider] ──► download PDF
+
 settings (accessible from BottomNav)
 ```
 
-- `BottomNav` is hidden on: `intake`, `draft`, `preview`
+- `BottomNav` is hidden on: `intake`, `upload`, `draft`, `preview`
 - `draft` ↔ `preview` toggle is a button in the top bar of each screen
 
 ---
@@ -57,13 +64,16 @@ src/
 │   └── ui/
 │       └── BottomNav.tsx
 ├── constants/
-│   └── brand.ts               # COLORS, FONTS constants
+│   ├── brand.ts               # COLORS, FONTS, CONTACT constants
+│   └── defaults.ts            # DEFAULT_SIGNATORY, DEFAULT_PDF_SETTINGS
 ├── pdf/
 │   ├── fonts.ts               # Font.register() calls
 │   └── partitionBlocks.ts     # Pure pagination: ContentBlock[] → { page1, continuations[], totalPages }
 ├── screens/
-│   ├── HomeScreen.tsx
+│   ├── HomeScreen.tsx         # 3-card entry: Create with AI, Upload & Convert, Blank Letterhead
 │   ├── IntakeScreen.tsx       # Freeform input → AI pipeline → draft
+│   ├── UploadScreen.tsx       # File upload → text extraction → AI pipeline → draft
+│   ├── BlankScreen.tsx        # BlobProvider → blank letterhead PDF download
 │   ├── DraftScreen.tsx        # Edit mode: envelope fields + block list + action bar
 │   ├── PreviewScreen.tsx      # BlobProvider, inline <object> preview, download
 │   └── SettingsScreen.tsx
@@ -72,7 +82,9 @@ src/
 │                              #   setPipelineCtx, updateBlock, updateEnvelope, reset
 ├── types/
 │   └── document.ts            # DocumentType, ContentBlock, DocumentEnvelope, LetterDraft
-├── App.tsx                    # Screen router, state wiring
+├── utils/
+│   └── extractText.ts         # extractTextFromFile(file) — mammoth + pdfjs-dist
+├── App.tsx                    # Screen router: home|intake|upload|blank|draft|preview|settings
 └── main.tsx                   # Buffer polyfill shim + app mount
 ```
 
@@ -89,8 +101,27 @@ src/
 
 ---
 
+## Upload & Convert Flow
+
+```
+UploadScreen
+  └── extractTextFromFile(file)
+        ├── .docx → mammoth.extractRawText()
+        └── .pdf  → pdfjs-dist getTextContent()
+              ↓
+        extractedText: string
+              ↓
+  [Same pipeline as IntakeScreen]
+  classifyIntent(text) → generateClarification(ctx) → generateDraft(ctx)
+              ↓
+        DraftScreen ⇄ PreviewScreen
+```
+
+---
+
 ## Key Constraints
 - Single `BlobProvider` only — never mount two PDF instances simultaneously (D010)
 - No localStorage/sessionStorage — all state in-memory (D004)
 - All AI calls go through `src/ai/adapter.ts` — never import gemini.ts/groq.ts in components
 - `partitionBlocks()` is the single source of truth for page layout — never rely on @react-pdf auto-overflow
+- Upload pipeline imports AI tasks directly from `src/ai/tasks/` (same as IntakeScreen)
