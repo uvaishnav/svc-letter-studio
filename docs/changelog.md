@@ -1,6 +1,22 @@
 # Changelog
 
-## Session 7 — 2026-06-06
+## Session 7 — 2026-06-06 (continued)
+
+### Fixed
+- `src/components/pdf/LetterheadFirstPage.tsx` — replaced `flex:1` with `maxHeight: 648.14` on `contentArea`
+  - Root cause: `flex:1` was expanding the content container to fill all remaining page height after the header, giving content a taller box than expected. Content then flowed to the bottom of that expanded box — visually touching the footer gold line with no breathing gap.
+  - Fix: `maxHeight: 648.14pt` (= 841.89 − 108.75 − 20 − 65) hard-caps the content area. Content can never overflow into the footer zone.
+  - Added detailed geometry comment to file explaining every measurement.
+
+### Redesigned
+- `src/components/pdf/LetterheadContinuationPage.tsx` — complete rewrite
+  - Removed: top bar (brand name + page label), `Footer` component import, Helvetica built-in fonts
+  - New design: plain ivory page, watermark, `marginTop: 36pt`, `marginBottom: 48pt`, page number (`FONTS.body`, 8pt, `COLORS.brownMuted`) at `position: absolute, bottom: 18, right: 36`
+  - Available content area: 757.89pt tall × 523.28pt wide
+  - Geometry comment added to file
+
+### Cleaned
+- `src/components/pdf/LetterheadDocument.tsx` — removed dead `LetterheadContinuationPage` import
 
 ### Documentation Corrections (hallucination audit)
 - `docs/progress.md` — removed false blockers from session 6:
@@ -9,17 +25,19 @@
   - Replaced with accurate description of current multi-page behaviour and real known inaccuracies
 - `docs/decisions.md` — corrected D023:
   - Rewritten to accurately describe auto-overflow as the correct and final strategy
-  - Documented `LetterheadContinuationPage` as future-use only; noted its font issue (uses Helvetica built-ins)
+  - Documented `LetterheadContinuationPage` as future-use only; noted its font issue (now fixed)
   - Documented `SIGNATORY_HEIGHT * scale` inaccuracy in `useCompactLayout` (minor, non-critical)
 
-### Verified from source (no code changes)
+### Verified from source (no code changes in audit phase)
 - `Signatory.tsx` — confirmed flow layout, marginTop:24, correct
 - `Footer.tsx` — confirmed `fixed` + `render` prop hides footer on page 2+, correct
 - `Watermark.tsx` — confirmed `fixed` prop repeats watermark on all pages, correct
-- `LetterheadFirstPage.tsx` — confirmed single page with auto-overflow, correct
-- `LetterheadDocument.tsx` — confirmed `LetterheadContinuationPage` is imported but never rendered (dead import)
-- `LetterheadContinuationPage.tsx` — confirmed font mismatch: uses `Helvetica-Bold`/`Helvetica` instead of registered Montserrat fonts
-- `useCompactLayout.ts` — confirmed `SIGNATORY_HEIGHT * scale` applied to full height; actual component only scales marginTop
+- `useCompactLayout.ts` — confirmed `PAGE_BODY_HEIGHT = 648.14pt` matches actual geometry exactly
+
+### Next
+- Build `src/pdf/partitionBlocks.ts` — smart block-level pagination with orphan/widow control
+- Wire `LetterheadContinuationPage` into `LetterheadDocument` using partition output
+- Remove `useCompactLayout` compression strategy (replaced by partition approach)
 
 ---
 
@@ -55,101 +73,53 @@
 
 ### Changed
 - `src/ai/types.ts` — added `TaskTier`, `PipelineContext` alongside existing `AIInput`, `AIOutput`, `AIProvider`
-- `src/ai/prompts.ts` — replaced generic `buildSystemPrompt/buildUserPrompt` with task-specific builders:
-  - `buildClassifySystemPrompt()`, `buildClassifyUserPrompt(rawInput)` — for intent classification
-  - `buildClarifySystemPrompt()`, `buildClarifyUserPrompt(ctx)` — for clarification generation
-  - `buildDraftSystemPrompt()`, `buildDraftUserPrompt(ctx)` — for full draft generation
-  - Legacy `buildSystemPrompt()` / `buildUserPrompt()` kept as thin wrappers (no breaking change)
-- `src/ai/gemini.ts` — added public `.call(system, user, tier)` method; `generateDraft()` uses `premium` tier internally; URL now resolved via `models.ts`
-- `src/ai/groq.ts` — added public `.call(system, user)` method for use by task modules
-- `src/ai/adapter.ts` — added `classifyPipeline()`, `clarifyPipeline()`, `draftPipeline()` orchestrators; legacy `generateDraft()` kept
-- `src/store/sessionStore.ts` — added `pipelineCtx: PipelineContext | null` to `SessionState`; added `setPipelineCtx()` action
+- `src/ai/prompts.ts` — replaced generic `buildSystemPrompt/buildUserPrompt` with task-specific builders
+- `src/ai/gemini.ts` — added public `.call(system, user, tier)` method
+- `src/ai/groq.ts` — added public `.call(system, user)` method
+- `src/ai/adapter.ts` — added 3-stage pipeline orchestrators
+- `src/store/sessionStore.ts` — added `pipelineCtx` field
 
 ### Decisions
-- D022: Tiered AI model routing (lightweight / standard / premium) with `PipelineContext` for context continuity
-- D020: Updated — prompts now task-specific rather than generic
+- D022: Tiered AI model routing
+- D020: Updated — prompts now task-specific
 
 ---
 
 ## Session 4 — 2026-06-06
 
 ### Added
-- `src/types/document.ts` — `DocumentType` union (8 types), `ContentBlock` discriminated union (paragraph, heading, bullet\_list, numbered\_list, table, spacer, divider), `DocumentEnvelope`, `LetterDraft`, `REQUIRED_ENVELOPE_FIELDS`, `getMissingFields()`
-- `src/components/pdf/BodyRenderer.tsx` — renders `ContentBlock[]` into `@react-pdf/renderer` elements; tables use dark-brown header row + zebra striping + gold borders
-- `src/store/sessionStore.ts` — updated `SessionState` to `{ draft: LetterDraft | null, aiProvider: 'gemini' | 'groq' | null }`, added `createEmptyDraft()`, `useSessionStore()` hook
-- `src/components/pdf/LetterheadDocument.tsx` — wired to `LetterDraft`; renders envelope section + BodyRenderer blocks + Signatory
-- `src/screens/PreviewScreen.tsx` — wired to new session shape; download filename from doc type + date; `ProviderBadge` component shows which AI model generated the draft
-- `src/constants/brand.ts` — added `COLORS.text`, `COLORS.darkBrown`, `FONTS.bodySemiBold`
-- `src/ai/types.ts` — `AIInput`, `AIOutput`, `AIProvider` interface
-- `src/ai/prompts.ts` — `buildSystemPrompt()`, `buildUserPrompt(input)` shared prompt layer
-- `src/ai/gemini.ts` — `GeminiProvider` using Gemini 3.5 Flash REST API with native JSON mode, `maxOutputTokens: 8192`
-- `src/ai/groq.ts` — `GroqProvider` using llama-3.3-70b-versatile with `response_format: json_object`
-- `src/ai/adapter.ts` — `generateDraft(input: AIInput): Promise<AIOutput>` — Gemini-first with Groq fallback
-- `.env.example` — documents `VITE_GEMINI_API_KEY` and `VITE_GROQ_API_KEY`
-
-### Changed
-- `src/components/pdf/LetterheadDocument.tsx` — full rewrite to consume new `LetterDraft` shape
-- `src/screens/PreviewScreen.tsx` — wired to new session shape
+- `src/types/document.ts`, `src/components/pdf/BodyRenderer.tsx`, `src/store/sessionStore.ts` update
+- `src/components/pdf/LetterheadDocument.tsx` wired to `LetterDraft`
+- `src/screens/PreviewScreen.tsx` wired to new session shape
+- `src/ai/types.ts`, `src/ai/prompts.ts`, `src/ai/gemini.ts`, `src/ai/groq.ts`, `src/ai/adapter.ts`
+- `.env.example`
 
 ### Fixed
 - `src/constants/brand.ts` — missing `COLORS.text`, `COLORS.darkBrown`, `FONTS.bodySemiBold`
-
-### Docs
-- `docs/architecture.md` — added `src/ai/` module tree, AI call flow diagram, data flow diagram
-- `src/ai/gemini.ts` — upgraded model from `gemini-2.0-flash` → `gemini-3.5-flash`; bumped `maxOutputTokens` 2048 → 8192
-- `src/store/sessionStore.ts` — added `aiProvider: 'gemini' | 'groq' | null` field to `SessionState`
 
 ---
 
 ## Session 3 — 2026-06-05
 
 ### Changed
-- `src/components/pdf/Header.tsx` — redesigned: ivory bg, Playfair Display SC wordmark, gold dash ornaments, full-width gold hairline rule
-- `src/components/pdf/Footer.tsx` — redesigned: ivory bg, gold hairline rule top, GSTIN prominent, clean two-row layout
-- `src/constants/brand.ts` — updated with real phone, email, address, GSTIN; corrected tagline
-- `src/pdf/fonts.ts` — registered `Playfair Display SC` Bold family
+- Header, Footer redesigned; brand.ts updated; Playfair Display SC registered
 
 ### Removed
-- Stamp container from `Signatory` component (physical rubber stamp preferred)
-
-### Fixed
-- `Signatory` — now uses `position: absolute, bottom: 0` to always sit at the bottom of content area
-
-### Docs
-- `docs/FONTS.md` — updated with Playfair Display SC TTF instructions
+- Stamp container from Signatory
 
 ---
 
 ## Session 2 — 2026-06-04
 
 ### Fixed
-- `Buffer is not defined` — inline IIFE polyfill in `main.tsx` + `define` block in `vite.config.ts`
-- Font not registered — self-hosted TTF + `Font.register()` with absolute URL from `window.location.origin`
-- Export button unclickable — removed duplicate `BlobProvider`, single instance in `PreviewScreen`
-- Preview not showing on mobile — switched from conditional hide to `<object>` on all devices
-- Ivory background bleed — `App.tsx` sets dark bg when on preview screen
-- `apple-mobile-web-app-capable` deprecation
+- Buffer polyfill, font registration, export button, mobile preview, ivory bleed, PWA deprecation
 
 ### Changed
-- Letterhead design: dark brown header band with ivory text + gold rule → full ivory design (D014)
-- `vite.config.ts` — removed `external: ['buffer']`, added `define` block
-
-### Added
-- `docs/FONTS.md`
+- Letterhead design: dark band → full ivory (D014)
 
 ---
 
 ## Session 1 — 2026-06-03
 
 ### Added
-- React + Vite + TypeScript scaffold
-- PWA setup: `vite-plugin-pwa`, manifest, icons
-- Brand tokens in `index.css`
-- Shell UI: `App.tsx`, `BottomNav`, screen routing
-- Tailwind v4 wired via `@tailwindcss/vite`
-- `@react-pdf/renderer` integrated
-- `LetterheadDocument`, `LetterheadFirstPage`, `LetterheadContinuationPage`
-- `Header`, `Footer`, `Watermark`, `Signatory` PDF components
-- `PreviewScreen` with BlobProvider + download
-- `src/pdf/fonts.ts` — font registration
-- `src/constants/brand.ts` — colors, fonts, contact
+- Full project scaffold: React+Vite+TS, PWA, brand tokens, shell UI, PDF engine foundation
