@@ -42,39 +42,41 @@
 - `PipelineContext` in `sessionStore.ts`
 
 ### Phase 7 — Smart Pagination ✅
-- **Root cause fixed:** `LetterheadFirstPage` `flex:1` → `maxHeight:648.14` (content was expanding into footer zone)
+- **Root cause fixed:** `LetterheadFirstPage` `flex:1` → `maxHeight:648.14`
 - **Continuation page rebuilt:** blank ivory, `marginTop:50pt`, `marginBottom:48pt`, watermark, page number bottom-right. Exports `CONT_CONTENT_MAX_HEIGHT` constant.
 - **`src/pdf/partitionBlocks.ts`** — pure partition function with 6-step pipeline
 - **`LetterheadDocument.tsx`** rewritten: calls `partitionBlocks()`, renders explicit pages, signatory on last page only
 - **`useCompactLayout.ts`** deleted — no spacing compression, ever
 
 ### Phase 6 — Draft Output, AI Improve Actions, Manual Editing UI ✅
-- **`src/ai/tasks/improveBlock.ts`** — Tier 2 per-block AI improve (Shorten / Expand / Formal / Rewrite / Custom instruction)
-- **`src/ai/prompts.ts`** — added `buildImproveBlockSystemPrompt` + `buildImproveBlockUserPrompt`
-- **`src/ai/adapter.ts`** — exports `improveBlock`, `ImproveBlockInput`, `ImproveAction`
-- **`src/store/sessionStore.ts`** — added `updateBlock(index, block)` and `updateEnvelope(partial)` actions
-- **`src/components/draft/EnvelopeFields.tsx`** — collapsible tap-to-edit panel (date, ref, subject, recipient)
-- **`src/components/draft/BlockList.tsx`** — type-aware inline editors for all block types:
-  - `paragraph` — full text + ✎ pencil → textarea
-  - `heading` (level 1/2) — styled display + ✎ pencil → input
-  - `bullet_list` / `numbered_list` — rendered items + per-item edit/remove + Add item
-  - `table` — HTML table with tap-to-edit cells + Add row
-  - `spacer` / `divider` — visual only, not editable
-- **`src/components/draft/BlockActionBar.tsx`** — sticky bottom sheet: AI presets + Tell AI custom + manual edit modes
-- **`src/screens/DraftScreen.tsx`** — full edit mode screen with hint text, error banner, Preview toggle
-- **`src/screens/PreviewScreen.tsx`** — ✏️ Edit toggle button navigates back to DraftScreen
-- **`src/screens/IntakeScreen.tsx`** — navigate target changed to `'draft'` after generation (fixed manually)
-- **`src/App.tsx`** — wired `DraftScreen`, `updateBlock`, `updateEnvelope`; BottomNav hidden on draft screen
+- **`src/ai/tasks/improveBlock.ts`** — Tier 2 per-block AI improve
+- **`src/components/draft/EnvelopeFields.tsx`** — collapsible tap-to-edit panel
+- **`src/components/draft/BlockList.tsx`** — type-aware inline editors for all block types
+- **`src/components/draft/BlockActionBar.tsx`** — sticky bottom sheet: AI presets + Tell AI + manual edit
+- **`src/screens/DraftScreen.tsx`** — full edit mode screen
+- **`src/screens/PreviewScreen.tsx`** — ✏️ Edit toggle button
+- **`src/screens/IntakeScreen.tsx`** — navigate to `'draft'` after generation
+- **`src/App.tsx`** — wired DraftScreen
+
+### Phase 8 — Preview and Export Polish ✅
+- **Share sheet (iOS):** `⬆ Share` button → `navigator.share({ files: [pdfFile] })` → native iOS share sheet
+- **Download fallback (desktop):** `⬇ Download` → `<a download>` on non-iOS browsers
+- **Print button:** 🖨️ icon in top bar — iOS uses share sheet, desktop uses hidden iframe + `window.print()`
+- **`canShareFiles()` helper:** runtime detection of `navigator.canShare` support
+- **Button labels adapt:** `⬆ Share` on iOS, `⬇ Download` on desktop
+- **Hint text adapts:** iOS vs desktop contextual message below PDF
+- **AI provider badge (D021):** verified working in PreviewScreen ✅
+- **Filename:** `SVC-{docType}-{date}.pdf` verified ✅
 
 ---
 
 ## Next Phase
 
-### Phase 8 — Preview and Export Polish
-- Share sheet on iOS (Web Share API) — tap Download → native share sheet
-- Print flow
-- AI provider badge (D021 — already in PreviewScreen, verify it shows correctly)
-- Download filename already done: `SVC-{docType}-{date}.pdf`
+### Phase 9 — Settings and Defaults
+- Signatory defaults UI (name, designation) — persisted in-memory in sessionStore
+- Watermark toggle (on/off)
+- Contact info settings (phone, email, GSTIN, address) used in footer
+- Accessible from BottomNav Settings tab
 
 ---
 
@@ -85,6 +87,10 @@ None.
 ---
 
 ## Session Log
+
+### Session 9 — 2026-06-06 (Phase 8)
+- PreviewScreen upgraded: share sheet, print flow, canShareFiles detection, loading states, adaptive labels
+- Phase 8 fully complete
 
 ### Session 8c — 2026-06-06
 - IntakeScreen navigate('preview') → navigate('draft') fixed manually by user
@@ -115,7 +121,7 @@ None.
 - Updated D023, D024, D025 in decisions.md
 
 ### Session 6 — 2026-06-06
-- Fixed `Footer` render prop, `Signatory` flow layout, `useCompactLayout` constants
+- Fixed Footer render prop, Signatory flow layout, useCompactLayout constants
 
 ### Session 5 — 2026-06-06
 - Tiered AI routing (D022), Phase 5 intake pipeline
