@@ -1,8 +1,6 @@
 import { useState, useCallback } from 'react';
-import type { LetterDraft } from '../types/document';
+import type { LetterDraft, ContentBlock, DocumentEnvelope } from '../types/document';
 import type { PipelineContext } from '../ai/types';
-
-// ─── Shared defaults (used by PDF components) ─────────────────────────────────
 
 export const DEFAULT_SIGNATORY = {
   name:        'UPPALAPATI SUREKHA',
@@ -12,9 +10,6 @@ export const DEFAULT_SIGNATORY = {
 export const DEFAULT_PDF_SETTINGS = {
   watermarkEnabled: true,
 };
-
-// ─── Session State ────────────────────────────────────────────────────────────
-// In-memory only — no localStorage (D004)
 
 export interface SessionState {
   draft:           LetterDraft | null;
@@ -37,16 +32,13 @@ function initialState(): SessionState {
 export function createEmptyDraft(): LetterDraft {
   return {
     envelope: {
-      documentType:         'general_letter',
-      date:                 new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' }),
-      refNumber:            null,
-      recipientName:        '',
-      recipientAddress:     '',
-      subject:              '',
-      signatoryName:        DEFAULT_SIGNATORY.name,
-      signatoryDesignation: DEFAULT_SIGNATORY.designation,
+      documentType: 'letter',
+      date: new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' }),
+      refNumber: undefined,
+      subject: '',
+      signatory: DEFAULT_SIGNATORY,
     },
-    body: [],
+    blocks: [],
   };
 }
 
@@ -65,7 +57,31 @@ export function useSessionStore() {
     setState(s => ({ ...s, pipelineCtx }));
   }, []);
 
+  // Replace a single block by index — used by per-block AI improve and manual edit
+  const updateBlock = useCallback((index: number, updated: ContentBlock) => {
+    setState(s => {
+      if (!s.draft) return s;
+      const blocks = [...s.draft.blocks];
+      blocks[index] = updated;
+      return { ...s, draft: { ...s.draft, blocks } };
+    });
+  }, []);
+
+  // Merge partial envelope fields — used by EnvelopeFields editor
+  const updateEnvelope = useCallback((partial: Partial<DocumentEnvelope>) => {
+    setState(s => {
+      if (!s.draft) return s;
+      return {
+        ...s,
+        draft: {
+          ...s.draft,
+          envelope: { ...s.draft.envelope, ...partial },
+        },
+      };
+    });
+  }, []);
+
   const reset = useCallback(() => setState(initialState()), []);
 
-  return { state, setDraft, setRawInput, setPipelineCtx, reset };
+  return { state, setDraft, setRawInput, setPipelineCtx, updateBlock, updateEnvelope, reset };
 }

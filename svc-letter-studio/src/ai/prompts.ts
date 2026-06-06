@@ -1,7 +1,7 @@
 import type { AIInput } from './types';
 import type { PipelineContext } from './types';
+import type { ImproveBlockInput } from './tasks/improveBlock';
 
-// ─── Shared helpers ────────────────────────────────────────────────────────────
 export function todayDateString(): string {
   return new Date().toLocaleDateString('en-IN', {
     day:   '2-digit',
@@ -10,7 +10,6 @@ export function todayDateString(): string {
   });
 }
 
-// ─── Shared company context ─────────────────────────────────────────────────
 function svcContext(): string {
   return `You are a professional business letter drafting assistant for Sri Vaishnav Constructions, a construction company based in Hyderabad, India.
 The company deals in residential and commercial construction projects, and also provides tipper vehicle services.
@@ -19,7 +18,7 @@ Today's date is ${todayDateString()}. Use this as the document date unless the u
 Always maintain a formal, professional tone appropriate for Indian business correspondence.`;
 }
 
-// ─── TASK 1: Intent classification (Tier 1 — lightweight) ────────────────────
+// ─── TASK 1: Intent classification (Tier 1 — lightweight) ─────────────────────
 export function buildClassifySystemPrompt(): string {
   return `${svcContext()}
 
@@ -50,7 +49,7 @@ export function buildClassifyUserPrompt(rawInput: string): string {
 "${rawInput}"`;
 }
 
-// ─── TASK 2: Clarification question generation (Tier 1 — lightweight) ────────
+// ─── TASK 2: Clarification question generation (Tier 1 — lightweight) ─────────
 export function buildClarifySystemPrompt(): string {
   return `${svcContext()}
 
@@ -69,9 +68,7 @@ Missing fields: ${(ctx.missingFields ?? []).join(', ')}
 Generate one clarifying question.`;
 }
 
-// ─── TASK 3: Full draft generation (Tier 3 — premium) ──────────────────────
-// IMPORTANT: The JSON schema here MUST match the LetterDraft TypeScript interface
-// in src/types/document.ts exactly. Do NOT use flat fields like recipientName.
+// ─── TASK 3: Full draft generation (Tier 3 — premium) ─────────────────────────
 export function buildDraftSystemPrompt(): string {
   return `${svcContext()}
 
@@ -138,7 +135,43 @@ export function buildDraftUserPrompt(ctx: PipelineContext): string {
   return parts.join('\n');
 }
 
-// ─── Legacy helpers ─────────────────────────────────────────────────────────
+// ─── TASK 4: Per-block improve (Tier 2 — standard) ────────────────────────────
+const ACTION_INSTRUCTIONS: Record<string, string> = {
+  shorten:  'Shorten this block. Keep all key information but make it more concise. Remove filler words.',
+  expand:   'Expand this block with more detail and professional elaboration. Keep the same tone.',
+  formal:   'Rewrite this block in a more formal, professional tone suitable for Indian business correspondence.',
+  rewrite:  'Rewrite this block completely while preserving its meaning and intent.',
+};
+
+export function buildImproveBlockSystemPrompt(): string {
+  return `${svcContext()}
+
+You will be given a single content block from a business letter and an instruction to improve it.
+Return ONLY a raw valid JSON object representing the improved block with the same "type" field.
+Do NOT change the block type. Do NOT wrap in arrays. No markdown, no code fences, no explanation.
+
+Block types and their fields:
+- paragraph: { "type": "paragraph", "text": "<string>", "bold": <bool optional>, "indent": <bool optional> }
+- heading:   { "type": "heading", "level": 1 or 2, "text": "<string>" }
+- bullet_list: { "type": "bullet_list", "items": ["<string>"] }
+- numbered_list: { "type": "numbered_list", "items": ["<string>"] }
+- table: { "type": "table", "headers": ["<string>"], "rows": [["<string>"]] }`;
+}
+
+export function buildImproveBlockUserPrompt(input: ImproveBlockInput): string {
+  const instruction = input.action === 'custom'
+    ? (input.customInstruction ?? 'Improve this block.')
+    : ACTION_INSTRUCTIONS[input.action];
+
+  return `Instruction: ${instruction}
+
+Current block:
+${JSON.stringify(input.block, null, 2)}
+
+Return the improved block as raw JSON only.`;
+}
+
+// ─── Legacy helpers ────────────────────────────────────────────────────────────
 export function buildSystemPrompt(): string {
   return buildDraftSystemPrompt();
 }

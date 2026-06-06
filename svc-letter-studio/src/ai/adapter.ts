@@ -7,10 +7,13 @@ import type { AIInput, AIOutput, PipelineContext } from './types';
 import { classifyIntent, applyClassification } from './tasks/classifyIntent';
 import { generateClarification, needsClarification } from './tasks/generateClarification';
 import { generateDraftFromContext } from './tasks/generateDraft';
+import { improveBlock as _improveBlock } from './tasks/improveBlock';
 
 export type { AIInput, AIOutput, PipelineContext } from './types';
+export type { ImproveBlockInput, ImproveAction } from './tasks/improveBlock';
+export { improveBlock } from './tasks/improveBlock';
 
-// ─── Legacy single-call path (kept for compatibility) ─────────────────────────
+// ─── Legacy single-call path ───────────────────────────────────────────────────
 export async function generateDraft(input: AIInput): Promise<AIOutput> {
   try {
     const gemini = new GeminiProvider();
@@ -23,11 +26,7 @@ export async function generateDraft(input: AIInput): Promise<AIOutput> {
   }
 }
 
-// ─── Pipeline orchestrator ────────────────────────────────────────────────────
-// Stage 1: classify intent          (Tier 1 — lightweight)
-// Stage 2: clarification question   (Tier 1 — lightweight, only if needed)
-// Stage 3: draft generation         (Tier 3 — premium)
-
+// ─── Pipeline orchestrator ─────────────────────────────────────────────────────
 export async function classifyPipeline(
   rawInput: string
 ): Promise<PipelineContext> {

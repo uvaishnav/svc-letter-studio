@@ -2,6 +2,7 @@ import { useState } from 'react'
 import BottomNav from './components/ui/BottomNav'
 import HomeScreen from './screens/HomeScreen'
 import IntakeScreen from './screens/IntakeScreen'
+import DraftScreen from './screens/DraftScreen'
 import PreviewScreen from './screens/PreviewScreen'
 import SettingsScreen from './screens/SettingsScreen'
 import { useSessionStore } from './store/sessionStore'
@@ -10,14 +11,22 @@ export type Screen = 'home' | 'intake' | 'draft' | 'preview' | 'settings'
 
 export default function App() {
   const [screen, setScreen] = useState<Screen>('home')
-  const { state, setDraft, setRawInput, setPipelineCtx } = useSessionStore()
+  const {
+    state,
+    setDraft,
+    setRawInput,
+    setPipelineCtx,
+    updateBlock,
+    updateEnvelope,
+  } = useSessionStore()
 
   const navigate = (s: Screen) => setScreen(s)
 
-  const isPreview  = screen === 'preview'
-  const isIntake   = screen === 'intake'
-  // Hide BottomNav on preview and intake (full-screen flow screens)
-  const showNav    = !isPreview && !isIntake
+  const isPreview = screen === 'preview'
+  const isIntake  = screen === 'intake'
+  const isDraft   = screen === 'draft'
+  // Hide BottomNav on full-screen flow screens
+  const showNav   = !isPreview && !isIntake && !isDraft
 
   return (
     <div
@@ -28,7 +37,6 @@ export default function App() {
         flexDirection: 'column',
       }}
     >
-      {/* ── Screen Router ────────────────────────────────────────────────── */}
       <div style={{ flex: 1, overflowY: 'auto' }}>
 
         {screen === 'home' && (
@@ -45,6 +53,15 @@ export default function App() {
           />
         )}
 
+        {screen === 'draft' && (
+          <DraftScreen
+            navigate={navigate}
+            state={state}
+            updateBlock={updateBlock}
+            updateEnvelope={updateEnvelope}
+          />
+        )}
+
         {screen === 'preview' && (
           <PreviewScreen
             navigate={navigate}
@@ -58,7 +75,6 @@ export default function App() {
 
       </div>
 
-      {/* ── Bottom Nav (hidden on preview + intake) ──────────────────────── */}
       {showNav && (
         <BottomNav current={screen} navigate={navigate} />
       )}

@@ -2,7 +2,7 @@ import { Document, View, Text, StyleSheet } from '@react-pdf/renderer'
 import '../../pdf/fonts'
 import { DEFAULT_SIGNATORY, DEFAULT_PDF_SETTINGS } from '../../store/sessionStore'
 import type { LetterDraft } from '../../types/document'
-import { partitionDebug } from '../../pdf/partitionBlocks'
+import { partitionBlocks } from '../../pdf/partitionBlocks'
 import LetterheadFirstPage from './LetterheadFirstPage'
 import LetterheadContinuationPage from './LetterheadContinuationPage'
 import Signatory from './Signatory'
@@ -67,7 +67,6 @@ const S = StyleSheet.create({
   },
 })
 
-// ─── Envelope height estimator ─────────────────────────────────────────────────
 function estimateEnvelopeHeight(envelope: LetterDraft['envelope']): number {
   let h = 0
   if (envelope.date || envelope.refNumber) h += 22
@@ -102,9 +101,7 @@ export default function LetterheadDocument({
 
   const envelopeHeight = envelope ? estimateEnvelopeHeight(envelope) : 0
 
-  // ⚠️  DEBUG MODE — logs partition decisions to browser console.
-  // Switch back to partitionBlocks() once pagination looks correct.
-  const { page1, continuations, totalPages } = partitionDebug(blocks, envelopeHeight)
+  const { page1, continuations, totalPages } = partitionBlocks(blocks, envelopeHeight)
 
   const envelopeSection = (
     <View style={S.envelopeSection}>
@@ -148,7 +145,6 @@ export default function LetterheadDocument({
       creator="SVC Letter Studio"
       producer="SVC Letter Studio"
     >
-      {/* ── Page 1 ── */}
       <LetterheadFirstPage watermarkEnabled={watermarkEnabled}>
         {envelopeSection}
         <BodyRenderer blocks={page1} spacingScale={1} />
@@ -157,7 +153,6 @@ export default function LetterheadDocument({
         )}
       </LetterheadFirstPage>
 
-      {/* ── Continuation pages ── */}
       {continuations.map((pageBlocks, idx) => {
         const pageNumber = idx + 2
         const isLast = isLastPage(pageNumber - 1)
