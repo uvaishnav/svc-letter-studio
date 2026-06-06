@@ -14,7 +14,7 @@
 - `LetterheadDocument`, `LetterheadFirstPage`, `LetterheadContinuationPage` components
 - `Header` — ivory bg, logo + Playfair Display SC brand name, gold dash ornaments, Montserrat tagline, full-width gold hairline rule
 - `Footer` — ivory bg, gold hairline rule on top, phone | GSTIN | email row, address centered below
-- `Watermark` — centred logo at 3.2% opacity, 220px
+- `Watermark` — centred logo at 3.2% opacity, 220px; uses `fixed` so it appears on every auto-overflow page
 - `Signatory` — flow-positioned after last content block; renders on whichever page content ends
 - `PreviewScreen` — single BlobProvider, inline `<object>` preview on all devices, download button
 - Self-hosted font loading from `public/fonts/` via `src/pdf/fonts.ts`
@@ -74,15 +74,26 @@
 
 ## Known Blockers / Open Issues
 
-### Multi-page PDF layout — partially resolved (session 6)
-Symptoms fixed so far:
-- ✅ Footer no longer repeats on page 2 (was `fixed`, now uses `fixed` + `render` prop with page condition)
-- ✅ Signatory now flows after content (was `position:absolute` anchored to page 1 bottom)
+### Multi-page PDF layout — current state (verified session 7)
 
-Remaining issue (to fix next session):
-- ⚠️ Page 2 has no header/branding — raw overflow page looks bare
-- ⚠️ `useCompactLayout` widow detection is functional but estimation accuracy needs further calibration against real PDFs
-- ⚠️ `LetterheadContinuationPage` component exists but is not yet wired into the multi-page flow
+**How it works (correct behaviour — not a bug):**
+- `LetterheadFirstPage` renders a single `<Page>`. `@react-pdf/renderer` auto-overflows content to new blank pages when content exceeds page 1.
+- `Footer` uses `fixed` + `render={({ pageNumber: pn }) => pn > 1 ? null : ...}` — shows only on page 1. Auto-overflow pages (page 2+) intentionally have no footer. ✅
+- `Signatory` is flow-positioned (`marginTop: 24`) — follows content to whatever page it ends on. ✅
+- `Watermark` uses `fixed` — repeats on every auto-overflow page automatically. ✅
+
+**`LetterheadContinuationPage` status:**
+- This component exists and is imported in `LetterheadDocument.tsx` but is NOT rendered (dead import).
+- It is a future-use component for explicit multi-page layouts. It is NOT a bug that it is unwired.
+- Its fonts use PDFKit built-ins (`Helvetica-Bold`, `Helvetica`) instead of our registered Montserrat/Playfair fonts — needs fixing before it can be used.
+
+**`useCompactLayout` known inaccuracy:**
+- `estimateTotalHeight()` scales `SIGNATORY_HEIGHT * scale`, but `Signatory.tsx` only has scalable `marginTop` — the signature box height, name, and designation are fixed sizes. This causes a slight over-estimate of compaction needed on long letters.
+- Not critical for correctness (impossibility guard prevents wrong compression), but estimation could be more precise.
+
+**Active issues reported by user (session 7) — under investigation:**
+- Content rendering problem (details TBD after user describes)
+- Pagination logic problem (details TBD after user describes)
 
 ---
 
@@ -138,4 +149,14 @@ Remaining issue (to fix next session):
 - Fixed: `Signatory` — changed from `position:absolute` to flow layout (`marginTop:24`); now renders after last content block on whichever page content ends
 - Fixed: `useCompactLayout` — recalibrated `CHARS_PER_LINE` to 80 (from actual geometry: 523pt ÷ 6.5pt/char), added `SIGNATORY_HEIGHT: 92pt` to body estimate, set `WIDOW_THRESHOLD: 0.50`
 - Updated D016 (Signatory positioning) in decisions.md
-- Remaining issues noted in blockers above — to continue next session
+- ⚠️ Session 6 also logged incorrect "remaining issues" — these were hallucinations, corrected in session 7 (see Known Blockers above)
+
+### Session 7 — 2026-06-06
+- Audited all PDF source files against session 6 documentation
+- Corrected hallucinations in progress.md blockers section
+- Confirmed: single-page auto-overflow is correct intended behaviour — not a bug
+- Confirmed: `LetterheadContinuationPage` unwired is intentional — it is a future-use component
+- Confirmed: `Watermark` fixed prop correctly repeats on all pages
+- Identified: `LetterheadContinuationPage` uses wrong fonts (Helvetica built-ins instead of Montserrat)
+- Identified: `SIGNATORY_HEIGHT * scale` in estimateTotalHeight is slightly inaccurate (only marginTop scales in real component)
+- Updated D023 in decisions.md to reflect correct multi-page strategy
