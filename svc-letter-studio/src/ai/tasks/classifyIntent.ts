@@ -39,3 +39,14 @@ export async function classifyIntent(
     missingFields:  parsed.missingFields,
   };
 }
+
+// Merges classification result into an existing PipelineContext
+export function applyClassification(
+  ctx: Partial<PipelineContext>,
+  result: Partial<PipelineContext>
+): PipelineContext {
+  return {
+    ...ctx,
+    ...result,
+  } as PipelineContext;
+}

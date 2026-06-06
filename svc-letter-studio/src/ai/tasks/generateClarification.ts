@@ -6,6 +6,11 @@ import { GroqProvider } from '../groq';
 import { buildClarifySystemPrompt, buildClarifyUserPrompt } from '../prompts';
 import type { PipelineContext } from '../types';
 
+// A clarification is needed if there are missing fields
+export function needsClarification(ctx: PipelineContext): boolean {
+  return Array.isArray(ctx.missingFields) && ctx.missingFields.length > 0;
+}
+
 export async function generateClarification(
   ctx: PipelineContext
 ): Promise<string> {
