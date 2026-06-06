@@ -2,13 +2,12 @@ import { View, Text, StyleSheet } from '@react-pdf/renderer'
 import { COLORS } from '../../constants/brand'
 
 const S = StyleSheet.create({
-  // Absolutely positioned — always sits at the bottom of the page, above footer
+  // Flow-positioned — sits at the end of the body content stream.
+  // Previously this was position:absolute which anchored it to page 1 bottom
+  // regardless of where the body content ended, causing it to overlap
+  // overflowed content on page 2.
   container: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    marginHorizontal: 36,
+    marginTop: 24,
     alignItems: 'flex-end',
   },
   signatureBox: {

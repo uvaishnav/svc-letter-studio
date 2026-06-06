@@ -1,74 +1,82 @@
 import type { ContentBlock } from '../types/document'
 
-// ─── Page geometry — measured from actual component source ───────────────────────
+// ─── Page geometry — measured from actual component source ───────────────────
 //
-// A4 = 841.89pt
-// Header.tsx: paddingTop(16) + logo(80) + paddingBottom(12) + rule(0.75) = 108.75pt
-// LetterheadFirstPage contentArea: marginTop(20) + marginBottom(65)
-// Footer + Signatory are position:absolute — consume ZERO content flow space
+// A4 = 841.89pt tall, 595.28pt wide
+//
+// LetterheadFirstPage (LetterheadFirstPage.tsx):
+//   contentArea: marginLeft:36, marginRight:36, marginTop:20, marginBottom:65
+//   → usable width  = 595.28 - 36 - 36 = 523.28pt
+//   → usable height = depends on Header height
+//
+// Header (Header.tsx): paddingTop:16 + logo:80 + paddingBottom:12 + rule:0.75 = 108.75pt
+//
+// Footer (Footer.tsx): position:absolute fixed — react-pdf repeats it on every
+//   page automatically. It does NOT consume content-area flow space on any page.
+//   The contentArea marginBottom:65 already reserves space for the footer.
+//
+// Signatory (Signatory.tsx): NOW a flow element (marginTop:24 + signatureSpace:44
+//   + marginBottom:5 + name:~10 + designation:~9 = ~92pt)
+//   It IS included in body height estimates.
 //
 // PAGE_BODY_HEIGHT = 841.89 - 108.75 - 20 - 65 = 648.14pt
 
 const A4_HEIGHT             = 841.89
-const HEADER_HEIGHT         = 108.75
-const CONTENT_MARGIN_TOP    = 20
-const CONTENT_MARGIN_BOTTOM = 65
+const HEADER_HEIGHT         = 108.75   // measured from Header.tsx
+const CONTENT_MARGIN_TOP    = 20       // contentArea marginTop
+const CONTENT_MARGIN_BOTTOM = 65       // contentArea marginBottom (reserves footer space)
 const PAGE_BODY_HEIGHT = A4_HEIGHT - HEADER_HEIGHT - CONTENT_MARGIN_TOP - CONTENT_MARGIN_BOTTOM
 // = 648.14pt
 
-// Effective chars per line at Montserrat 10pt on a 523pt-wide content area.
-// Raw math gives ~73 chars, but word-boundary wrapping wastes ~8 chars per
-// line on average. Calibrated against real PDF output: 65 chars/line.
-const CHARS_PER_LINE = 65
+// Signatory height as a flow element:
+//   marginTop(24) + signatureSpace(44) + marginBottom(5) + name(~10) + designation(~9) = ~92pt
+const SIGNATORY_HEIGHT = 92
 
-// Widow threshold: if estimated last-page fill < 60%, attempt compaction.
-//
-// WHY 60% and not a lower value:
-//   Our line-count estimator has a systematic upward bias of ~30 percentage
-//   points on dense letters (many paragraphs + bullet lists). A letter whose
-//   last page is genuinely ~10% full (a real widow — 3 closing lines) will be
-//   estimated at ~40%. Setting the threshold at 60% ensures these real widows
-//   are always caught regardless of estimation error.
-//
-//   Setting it higher than 60% is safe because the IMPOSSIBILITY GUARD (Step 3)
-//   independently prevents wrong compression: it only compacts if the body can
-//   actually fit at MIN_SCALE. So false positives from a high threshold are
-//   harmless — they just trigger the guard and return scale=1.0.
-const WIDOW_THRESHOLD  = 0.60
+// Content width = 523.28pt. Montserrat 10pt averages ~6.5pt per char.
+// Effective CPL = 523 / 6.5 ≈ 80. Validated against real PDF renders.
+const CHARS_PER_LINE = 80
 
-// Never compress spacing below 75% to preserve readability.
-// If the target cannot be reached at this scale, we accept the extra page
-// rather than over-squishing content.
-const MIN_SCALE        = 0.75
+// Widow threshold: if estimated last-page fill < 50%, attempt compaction.
+// The impossibility guard (Step 3) independently prevents wrong compression,
+// so a higher threshold just means more letters get evaluated — harmless.
+const WIDOW_THRESHOLD   = 0.50
+const MIN_SCALE         = 0.75
 const SEARCH_ITERATIONS = 16
 
 // ─── Block height estimators ──────────────────────────────────────────────────
-// Mirror BodyRenderer BASE constants exactly.
-// Only spacing values scale with `scale`; font sizes stay constant.
+// These mirror BodyRenderer BASE constants exactly.
+// lineHeight and marginBottom are the ONLY things that scale.
+// Font sizes never change.
 
 function linesFor(text: string): number {
   return Math.max(1, Math.ceil(text.length / CHARS_PER_LINE))
 }
 
 function estimateParagraphHeight(text: string, scale: number): number {
+  // fontSize(10) * lineHeight(1.6) * scale * lines + marginBottom(6) * scale
   return linesFor(text) * 10 * 1.6 * scale + 6 * scale
 }
 
 function estimateHeadingHeight(level: 1 | 2, scale: number): number {
-  if (level === 1) return (12 * 1.4 + 14) * scale  // fontSize(12)*lineHeight + marginTop(8)+marginBottom(6)
-  return (10.5 * 1.4 + 10) * scale                 // fontSize(10.5)*lineHeight + marginTop(6)+marginBottom(4)
+  if (level === 1) {
+    // fontSize(12) * lineHeight(~1.4implied) + marginTop(8)*sc + marginBottom(6)*sc
+    return 12 * scale + (8 + 6) * scale
+  }
+  // fontSize(10.5) + marginTop(6)*sc + marginBottom(4)*sc
+  return 10.5 * scale + (6 + 4) * scale
 }
 
 function estimateListHeight(items: string[], scale: number): number {
-  // Each item: fontSize(10) * lineHeight(1.5) * lines + marginBottom(3)
+  // Each item: fontSize(10) * lineHeight(1.5) * scale * lines + marginBottom(3) * scale
   return items.reduce((sum, item) => sum + linesFor(item) * 10 * 1.5 * scale + 3 * scale, 0)
 }
 
 function estimateTableHeight(rows: string[][], scale: number): number {
-  // Header row + data rows at 19pt each (cell padding doesn't scale)
-  // marginVertical(8) * 2 scales
-  return (1 + rows.length) * 19 + 16 * scale
+  // Header row (padding:5 top+bottom = 10) + data rows (padding:5 top+bottom = 10)
+  // Each row: fontSize(9) + padding(10) = ~19pt. marginVertical(8)*2 scales.
+  return (1 + rows.length) * 19 + BASE_TABLE_MARGIN * 2 * scale
 }
+const BASE_TABLE_MARGIN = 8
 
 function estimateSpacerHeight(size: 'sm' | 'md' | 'lg' | undefined, scale: number): number {
   const MAP: Record<string, number> = { sm: 4, md: 8, lg: 16 }
@@ -76,7 +84,7 @@ function estimateSpacerHeight(size: 'sm' | 'md' | 'lg' | undefined, scale: numbe
 }
 
 function estimateDividerHeight(scale: number): number {
-  return 16 * scale + 0.5  // marginVertical(8)*2 + border
+  return BASE_TABLE_MARGIN * 2 * scale + 0.5
 }
 
 export function estimateTotalHeight(blocks: ContentBlock[], scale: number): number {
@@ -84,7 +92,7 @@ export function estimateTotalHeight(blocks: ContentBlock[], scale: number): numb
   for (const block of blocks) {
     switch (block.type) {
       case 'paragraph':     total += estimateParagraphHeight(block.text, scale); break
-      case 'heading':       total += estimateHeadingHeight(block.level ?? 1, scale); break
+      case 'heading':       total += estimateHeadingHeight((block.level ?? 1) as 1|2, scale); break
       case 'bullet_list':
       case 'numbered_list': total += estimateListHeight(block.items, scale); break
       case 'table':         total += estimateTableHeight(block.rows, scale); break
@@ -92,10 +100,12 @@ export function estimateTotalHeight(blocks: ContentBlock[], scale: number): numb
       case 'divider':       total += estimateDividerHeight(scale); break
     }
   }
+  // Add signatory — it's now a flow element at the end of the body
+  total += SIGNATORY_HEIGHT * scale
   return total
 }
 
-// ─── Page fill calculator ────────────────────────────────────────────────────────
+// ─── Page fill calculator ─────────────────────────────────────────────────────
 
 function pagesAndLastFill(totalHeight: number): { pages: number; lastFill: number } {
   if (totalHeight <= PAGE_BODY_HEIGHT) {
@@ -107,7 +117,7 @@ function pagesAndLastFill(totalHeight: number): { pages: number; lastFill: numbe
   return { pages: 1 + extraPages, lastFill: lastUsed / PAGE_BODY_HEIGHT }
 }
 
-// ─── Public interface ───────────────────────────────────────────────────────────────
+// ─── Public interface ─────────────────────────────────────────────────────────
 
 export interface CompactLayout {
   spacingScale: number
@@ -142,12 +152,12 @@ export function useCompactLayout(
     return { spacingScale: 1, estimatedPages: naturalPages }
   }
 
-  // Step 3: widow detected — check if compaction is even achievable.
-  // ⚠️ IMPOSSIBILITY GUARD: if body at MIN_SCALE still can't fit the target,
-  // the letter genuinely needs N pages. Return scale=1.0 — do NOT compress.
-  const targetPages     = naturalPages - 1
-  const maxTotalTarget  = targetPages * PAGE_BODY_HEIGHT
-  const maxBodyTarget   = maxTotalTarget - envelopeHeight
+  // Step 3: widow detected — check if compaction is achievable.
+  // ⚠️ IMPOSSIBILITY GUARD: if body at MIN_SCALE still can't fit, the letter
+  // genuinely needs N pages. Return scale=1.0 — do NOT compress.
+  const targetPages    = naturalPages - 1
+  const maxTotalTarget = targetPages * PAGE_BODY_HEIGHT
+  const maxBodyTarget  = maxTotalTarget - envelopeHeight
 
   const bodyAtMinScale = estimateTotalHeight(blocks, MIN_SCALE)
   if (bodyAtMinScale > maxBodyTarget) {
