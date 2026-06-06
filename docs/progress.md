@@ -68,15 +68,25 @@
 - **AI provider badge (D021):** verified working in PreviewScreen ✅
 - **Filename:** `SVC-{docType}-{date}.pdf` verified ✅
 
+### Phase 9 — Settings and Defaults ✅
+- **Decision:** No runtime settings UI needed for single-company app
+- **Single source of truth established:**
+  - `src/constants/brand.ts` → `CONTACT` object (phone, email, GSTIN, address) feeds Footer
+  - `src/constants/defaults.ts` → `DEFAULT_SIGNATORY` (name, designation) feeds PDF signatory
+- **Duplicates removed:**
+  - `src/store/sessionStore.ts` — removed duplicate `DEFAULT_SIGNATORY` + `DEFAULT_PDF_SETTINGS`; now imports from `constants/defaults`
+  - `src/ai/tasks/generateDraft.ts` — removed two hardcoded signatory string literals; now imports `DEFAULT_SIGNATORY` from `constants/defaults`
+- **To update contact/signatory values:** edit `src/constants/brand.ts` (CONTACT) and `src/constants/defaults.ts` (DEFAULT_SIGNATORY)
+
 ---
 
 ## Next Phase
 
-### Phase 9 — Settings and Defaults
-- Signatory defaults UI (name, designation) — persisted in-memory in sessionStore
-- Watermark toggle (on/off)
-- Contact info settings (phone, email, GSTIN, address) used in footer
-- Accessible from BottomNav Settings tab
+### Phase 10 — QA and Polish
+- iPhone testing (real device)
+- Error states: AI failure, empty input, network offline
+- Edge cases: very long letters, tables with many rows, missing recipient
+- Final review and release
 
 ---
 
@@ -87,6 +97,13 @@ None.
 ---
 
 ## Session Log
+
+### Session 10 — 2026-06-07 (Phase 9)
+- Audited all hardcoded values for header/footer/signatory
+- Found duplicate DEFAULT_SIGNATORY in sessionStore.ts — removed, now imports from constants/defaults
+- Found hardcoded signatory strings in generateDraft.ts — replaced with DEFAULT_SIGNATORY import
+- Confirmed brand.ts CONTACT and defaults.ts DEFAULT_SIGNATORY are the single sources of truth
+- Phase 9 complete (no settings UI needed — static constants sufficient for single-company app)
 
 ### Session 9 — 2026-06-06 (Phase 8)
 - PreviewScreen upgraded: share sheet, print flow, canShareFiles detection, loading states, adaptive labels

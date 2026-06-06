@@ -1,5 +1,28 @@
 # Changelog
 
+## Session 10 — 2026-06-07 (Phase 9)
+
+### Refactored
+- `src/store/sessionStore.ts`
+  - Removed duplicate `DEFAULT_SIGNATORY` and `DEFAULT_PDF_SETTINGS` declarations
+  - Now imports `DEFAULT_SIGNATORY` from `../constants/defaults`
+  - `createEmptyDraft()` spreads `{ ...DEFAULT_SIGNATORY }` (defensive copy, not `as const` reference)
+- `src/ai/tasks/generateDraft.ts`
+  - Removed two hardcoded `'UPPALAPATI SUREKHA'` / `'Proprietor'` string literals in `normalizeDraft()`
+  - Now imports `DEFAULT_SIGNATORY` from `../../constants/defaults`
+  - Both fallback paths (`signatoryName` normalization + missing signatory guard) now reference `DEFAULT_SIGNATORY.name` / `DEFAULT_SIGNATORY.designation`
+
+### Architecture note
+**Single source of truth for all hardcoded values:**
+| Value | File |
+|---|---|
+| Phone, Email, GSTIN, Address | `src/constants/brand.ts` → `CONTACT` |
+| Signatory name + designation | `src/constants/defaults.ts` → `DEFAULT_SIGNATORY` |
+| Watermark on/off, paper size | `src/constants/defaults.ts` → `DEFAULT_PDF_SETTINGS` |
+| Brand name, tagline | `src/constants/brand.ts` → `BRAND_NAME_*`, `BRAND_TAGLINE` |
+
+---
+
 ## Session 9 — 2026-06-06 (Phase 8)
 
 ### Changed
