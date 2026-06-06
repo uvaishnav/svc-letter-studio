@@ -1,4 +1,4 @@
-// PreviewScreen — Phase 3
+// PreviewScreen — Phase 3 + Phase 4 (provider badge)
 // Single BlobProvider renders the PDF exactly ONCE.
 // Both the inline <object> preview and the download button share that blob.
 // No PDFDownloadLink — avoids double-render crash in @react-pdf/renderer v4 (D010).
@@ -13,6 +13,33 @@ interface Props {
   state: SessionState
 }
 
+// ─── Provider Badge ───────────────────────────────────────────────────────────
+function ProviderBadge({ provider }: { provider: SessionState['aiProvider'] }) {
+  if (!provider) return null
+
+  const isGemini = provider === 'gemini'
+  const label = isGemini ? '✦ Gemini 3.5 Flash' : '⬡ Groq · Llama 3.3'
+  const bg = isGemini ? '#1A1A2E' : '#0F1923'
+  const accent = isGemini ? '#8AB4F8' : '#00D1B2'
+
+  return (
+    <div
+      className="flex items-center justify-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium"
+      style={{
+        background: bg,
+        color: accent,
+        fontFamily: 'var(--font-body)',
+        border: `1px solid ${accent}`,
+        letterSpacing: '0.04em',
+        opacity: 0.92,
+      }}
+    >
+      {label}
+    </div>
+  )
+}
+
+// ─── Main Screen ──────────────────────────────────────────────────────────────
 export default function PreviewScreen({ navigate, state }: Props) {
   const [showPreview, setShowPreview] = useState(true)
 
@@ -77,8 +104,15 @@ export default function PreviewScreen({ navigate, state }: Props) {
             </button>
           </div>
 
+          {/* Provider badge — sits just below the top bar */}
+          {state.aiProvider && (
+            <div className="flex justify-center pt-3 pb-1">
+              <ProviderBadge provider={state.aiProvider} />
+            </div>
+          )}
+
           {/* Body */}
-          <div className="flex-1 flex flex-col items-center px-4 pt-5 pb-8">
+          <div className="flex-1 flex flex-col items-center px-4 pt-4 pb-8">
 
             {loading && (
               <div

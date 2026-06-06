@@ -2,7 +2,7 @@ import type { AIInput, AIProvider } from './types';
 import type { LetterDraft } from '../types/document';
 import { buildSystemPrompt, buildUserPrompt } from './prompts';
 
-const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
+const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent';
 
 export class GeminiProvider implements AIProvider {
   private apiKey: string;
@@ -29,7 +29,7 @@ export class GeminiProvider implements AIProvider {
         ],
         generationConfig: {
           temperature: 0.4,
-          maxOutputTokens: 2048,
+          maxOutputTokens: 8192,
           responseMimeType: 'application/json',
         },
       }),

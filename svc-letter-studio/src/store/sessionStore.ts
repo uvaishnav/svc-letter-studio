@@ -36,6 +36,7 @@ export interface SessionState {
   uploadedContent: string     // parsed text from .docx/.pdf upload
   isGenerating: boolean
   watermarkEnabled: boolean
+  aiProvider: 'gemini' | 'groq' | null  // which provider generated the current draft
 }
 
 export const initialSessionState: SessionState = {
@@ -44,6 +45,7 @@ export const initialSessionState: SessionState = {
   uploadedContent: '',
   isGenerating: false,
   watermarkEnabled: DEFAULT_PDF_SETTINGS.watermarkEnabled,
+  aiProvider: null,
 }
 
 // ─── Hook ─────────────────────────────────────────────────────────────────────
