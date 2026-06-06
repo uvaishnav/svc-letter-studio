@@ -1,5 +1,28 @@
 # Changelog
 
+## Session 7 — 2026-06-06
+
+### Documentation Corrections (hallucination audit)
+- `docs/progress.md` — removed false blockers from session 6:
+  - Removed: “Page 2 has no header/branding — raw overflow page looks bare” (this is correct intended behaviour)
+  - Removed: “LetterheadContinuationPage is not yet wired” (it is intentionally not wired — future-use component only)
+  - Replaced with accurate description of current multi-page behaviour and real known inaccuracies
+- `docs/decisions.md` — corrected D023:
+  - Rewritten to accurately describe auto-overflow as the correct and final strategy
+  - Documented `LetterheadContinuationPage` as future-use only; noted its font issue (uses Helvetica built-ins)
+  - Documented `SIGNATORY_HEIGHT * scale` inaccuracy in `useCompactLayout` (minor, non-critical)
+
+### Verified from source (no code changes)
+- `Signatory.tsx` — confirmed flow layout, marginTop:24, correct
+- `Footer.tsx` — confirmed `fixed` + `render` prop hides footer on page 2+, correct
+- `Watermark.tsx` — confirmed `fixed` prop repeats watermark on all pages, correct
+- `LetterheadFirstPage.tsx` — confirmed single page with auto-overflow, correct
+- `LetterheadDocument.tsx` — confirmed `LetterheadContinuationPage` is imported but never rendered (dead import)
+- `LetterheadContinuationPage.tsx` — confirmed font mismatch: uses `Helvetica-Bold`/`Helvetica` instead of registered Montserrat fonts
+- `useCompactLayout.ts` — confirmed `SIGNATORY_HEIGHT * scale` applied to full height; actual component only scales marginTop
+
+---
+
 ## Session 6 — 2026-06-06
 
 ### Fixed
@@ -13,7 +36,7 @@
 
 ### Decisions
 - D016: Updated — Signatory now flow-positioned, not absolute (supersedes session 3 decision)
-- D023: New — multi-page PDF layout strategy documented
+- D023: New — multi-page PDF layout strategy documented (later corrected in session 7)
 
 ---
 
