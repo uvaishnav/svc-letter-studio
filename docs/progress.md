@@ -43,21 +43,32 @@
 ### Phase 4 — AI Provider Abstraction ✅
 - `src/ai/types.ts` — `AIInput`, `AIOutput`, `AIProvider` interface
 - `src/ai/prompts.ts` — `buildSystemPrompt()`, `buildUserPrompt(input)` — shared across both providers
-- `src/ai/gemini.ts` — `GeminiProvider` using Gemini 2.0 Flash (`responseMimeType: application/json`)
+- `src/ai/gemini.ts` — `GeminiProvider` using Gemini 3.5 Flash REST API with native JSON mode
 - `src/ai/groq.ts` — `GroqProvider` using `llama-3.3-70b-versatile` with `response_format: json_object`
 - `src/ai/adapter.ts` — `generateDraft(input)` — tries Gemini first, falls back to Groq on any error; re-exports `AIInput`, `AIOutput`
 - `.env.example` — documents required env vars
+
+### Phase 5 — AI Intake and Clarification ✅
+- **Tiered AI routing (D022):** `TaskTier` type, `PipelineContext` envelope, `src/ai/models.ts`
+- **Task modules:** `src/ai/tasks/classifyIntent.ts` (Tier 1), `src/ai/tasks/generateClarification.ts` (Tier 1), `src/ai/tasks/generateDraft.ts` (Tier 3)
+- **Updated prompts:** task-specific prompt builders for classify, clarify, and draft; legacy `buildSystemPrompt`/`buildUserPrompt` kept for backward compat
+- **Updated `gemini.ts`:** `.call(system, user, tier)` public method accepts any tier; URL resolved via `models.ts`
+- **Updated `groq.ts`:** `.call(system, user)` public method for use by task modules
+- **Updated `adapter.ts`:** `classifyPipeline()`, `clarifyPipeline()`, `draftPipeline()` orchestrate the 3-stage pipeline
+- **Updated `sessionStore.ts`:** added `pipelineCtx: PipelineContext | null` and `setPipelineCtx()` action
+- **`IntakeScreen.tsx`:** freeform textarea → classify (Tier 1) → optional one-question clarification (Tier 1) → draft generation (Tier 3) → PreviewScreen
+- Loading UI shows stage message + tier badge (Lightweight / Premium)
+- Error state with retry button
 
 ---
 
 ## Next Phase
 
-### Phase 5 — AI Intake and Clarification
-- Freeform intake screen (`IntakeScreen`) — textarea for user to describe the document
-- Intent detection — AI (or heuristic) identifies document type from text
-- One-question follow-up — if critical info is missing, ask exactly one clarifying question
-- On completion, calls `generateDraft()` from adapter and stores result in `sessionStore`
-- Transitions to PreviewScreen on success
+### Phase 6 — Draft Output, AI Improve Actions, Manual Editing UI
+- Show generated draft in an editable form
+- AI improve actions: Shorten, Expand, Make Formal, Rewrite (Tier 2 — standard model)
+- Manual field editing (recipient, subject, date, ref)
+- Full re-generation from context (Tier 3)
 
 ---
 
@@ -94,3 +105,15 @@
 - Wired `LetterheadDocument` and `PreviewScreen` to new `LetterDraft` shape
 - Built Phase 4: AI provider abstraction — types, prompts, Gemini adapter, Groq adapter, routing adapter
 - Added `.env.example`
+
+### Session 5 — 2026-06-06
+- Decided: Tiered AI routing (D022) — lightweight / standard / premium tiers
+- Built Phase 5: full intake pipeline with tiered routing
+- Added `src/ai/models.ts`, `src/ai/tasks/` directory with 3 task modules
+- Updated `gemini.ts` with public `.call(system, user, tier)` method
+- Updated `groq.ts` with public `.call(system, user)` method
+- Updated `adapter.ts`: 3-stage pipeline orchestrator
+- Updated `sessionStore.ts`: added `pipelineCtx` field
+- Built `IntakeScreen.tsx`: full UI with loading states, tier badge, clarification step, error handling
+- Updated `prompts.ts`: task-specific prompt builders (classify, clarify, draft)
+- Logged D022 in decisions.md
