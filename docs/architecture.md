@@ -1,110 +1,96 @@
 # Architecture
 
-## Repository Structure
+## Stack
+- React 18 + Vite + TypeScript
+- `@react-pdf/renderer` v4 — PDF generation
+- Tailwind CSS v4 via `@tailwindcss/vite`
+- `vite-plugin-pwa` — PWA manifest + service worker
+- Gemini Flash (primary AI) + Groq (fallback AI)
+- In-memory state only — no database, no localStorage
+
+---
+
+## Screen Flow
 
 ```
-svc-letter-studio/
-├── public/
-│   ├── fonts/               # Self-hosted TTF font files (see docs/FONTS.md)
-│   ├── icons/               # PWA icons
-│   └── manifest.webmanifest
-├── src/
-│   ├── ai/
-│   │   ├── adapter.ts         # Pipeline orchestrator: classifyPipeline, clarifyPipeline, draftPipeline
-│   │   ├── gemini.ts          # GeminiProvider — .call(system, user, tier)
-│   │   ├── groq.ts            # GroqProvider — .call(system, user)
-│   │   ├── models.ts          # TaskTier → Gemini model name/URL mapping
-│   │   ├── prompts.ts         # Task-specific prompt builders
-│   │   ├── types.ts           # AIInput, AIOutput, AIProvider, TaskTier, PipelineContext
-│   │   └── tasks/
-│   │       ├── classifyIntent.ts
-│   │       ├── generateClarification.ts
-│   │       └── generateDraft.ts
-│   ├── components/
-│   │   └── pdf/
-│   │       ├── BodyRenderer.tsx        # Renders ContentBlock[] → PDF elements
-│   │       ├── Footer.tsx              # Fixed footer, page 1 only
-│   │       ├── Header.tsx              # Ivory bg, logo, brand name, gold rule
-│   │       ├── LetterheadContinuationPage.tsx  # Blank ivory page; exports CONT_CONTENT_MAX_HEIGHT
-│   │       ├── LetterheadDocument.tsx  # Root PDF; calls partitionBlocks; renders all pages
-│   │       ├── LetterheadFirstPage.tsx # Page 1; maxHeight:648.14pt content area
-│   │       ├── Signatory.tsx           # Flow-positioned; appears on last page after content
-│   │       └── Watermark.tsx           # Fixed; repeats on all pages
-│   ├── constants/
-│   │   └── brand.ts               # COLORS, FONTS, brand text (phone, GSTIN, address, tagline)
+home → intake → [AI pipeline] → draft ⇄ preview
+                                   ↑
+                            (toggle button)
+settings (accessible from BottomNav)
+```
+
+- `BottomNav` is hidden on: `intake`, `draft`, `preview`
+- `draft` ↔ `preview` toggle is a button in the top bar of each screen
+
+---
+
+## Directory Structure
+
+```
+src/
+├── ai/
+│   ├── adapter.ts             # ONLY import point for AI in components
+│   ├── gemini.ts              # GeminiProvider — .call(system, user, tier)
+│   ├── groq.ts                # GroqProvider — .call(system, user, jsonMode)
+│   ├── models.ts              # geminiUrl(tier) — tier → model URL mapping
+│   ├── prompts.ts             # All prompt builders (Tasks 1–4)
+│   ├── types.ts               # TaskTier, PipelineContext, AIInput, AIOutput
+│   └── tasks/
+│       ├── classifyIntent.ts      # Tier 1 — document type + field detection
+│       ├── generateClarification.ts # Tier 1 — single follow-up question
+│       ├── generateDraft.ts       # Tier 3 — full LetterDraft from PipelineContext
+│       └── improveBlock.ts        # Tier 2 — single ContentBlock improve
+├── components/
+│   ├── draft/
+│   │   ├── EnvelopeFields.tsx   # Collapsible tap-to-edit envelope section
+│   │   ├── BlockList.tsx        # Scrollable block list with tap-to-select
+│   │   └── BlockActionBar.tsx   # Bottom sheet: AI actions + manual edit
 │   ├── pdf/
-│   │   ├── fonts.ts               # Font.register() calls for all TTF families
-│   │   └── partitionBlocks.ts     # Pure pagination: ContentBlock[] → { page1, continuations[], totalPages }
-│   ├── screens/
-│   │   ├── IntakeScreen.tsx       # Freeform input → AI pipeline → draft
-│   │   └── PreviewScreen.tsx      # BlobProvider, inline preview, download
-│   ├── store/
-│   │   └── sessionStore.ts        # Zustand store: draft, pipelineCtx, aiProvider
-│   ├── types/
-│   │   └── document.ts            # DocumentType, ContentBlock (7 variants), DocumentEnvelope, LetterDraft
-│   ├── App.tsx                    # Screen router, background switcher
-│   └── main.tsx                   # Buffer polyfill shim (must be first), app mount
-├── docs/
-│   ├── architecture.md            # This file
-│   ├── changelog.md
-│   ├── decisions.md
-│   ├── FONTS.md
-│   ├── prd.md
-│   └── progress.md
-├── index.html
-├── vite.config.ts
-├── .env.example
-└── package.json
+│   │   ├── LetterheadDocument.tsx      # Root PDF document — partition + render
+│   │   ├── LetterheadFirstPage.tsx     # Page 1 with header + footer
+│   │   ├── LetterheadContinuationPage.tsx # Continuation pages (ivory + watermark)
+│   │   ├── Header.tsx                 # Branded header component
+│   │   ├── Footer.tsx                 # Footer with contact info
+│   │   ├── Watermark.tsx              # Fixed centred logo watermark
+│   │   ├── Signatory.tsx              # Signatory block (flow-positioned)
+│   │   └── BodyRenderer.tsx           # ContentBlock[] → PDF elements
+│   └── ui/
+│       └── BottomNav.tsx
+├── constants/
+│   └── brand.ts               # COLORS, FONTS constants
+├── pdf/
+│   ├── fonts.ts               # Font.register() calls
+│   └── partitionBlocks.ts     # Pure pagination: ContentBlock[] → { page1, continuations[], totalPages }
+├── screens/
+│   ├── HomeScreen.tsx
+│   ├── IntakeScreen.tsx       # Freeform input → AI pipeline → draft
+│   ├── DraftScreen.tsx        # Edit mode: envelope fields + block list + action bar
+│   ├── PreviewScreen.tsx      # BlobProvider, inline <object> preview, download
+│   └── SettingsScreen.tsx
+├── store/
+│   └── sessionStore.ts        # useSessionStore(): state, setDraft, setRawInput,
+│                              #   setPipelineCtx, updateBlock, updateEnvelope, reset
+├── types/
+│   └── document.ts            # DocumentType, ContentBlock, DocumentEnvelope, LetterDraft
+├── App.tsx                    # Screen router, state wiring
+└── main.tsx                   # Buffer polyfill shim + app mount
 ```
 
-## Key Data Flow
+---
 
-```
-IntakeScreen
-  └→ adapter.ts: classifyPipeline() → Tier 1 (gemini-2.0-flash)
-  └→ adapter.ts: clarifyPipeline()  → Tier 1 (gemini-2.0-flash)  [optional]
-  └→ adapter.ts: draftPipeline()    → Tier 3 (gemini-3.5-flash)
-        └→ LetterDraft → sessionStore
+## AI Tier Routing
 
-PreviewScreen
-  └→ sessionStore.draft
-  └→ LetterheadDocument
-        └→ estimateEnvelopeHeight()
-        └→ partitionBlocks(blocks, envelopeHeight)
-              └→ { page1, continuations[], totalPages }
-        └→ <LetterheadFirstPage>  ← page1 blocks + signatory (if last)
-        └→ <LetterheadContinuationPage> × N  ← continuation blocks + signatory (if last)
-```
+| Tier | Model | Tasks |
+|------|-------|-------|
+| Tier 1 lightweight | `gemini-2.0-flash` | classifyIntent, generateClarification |
+| Tier 2 standard | `gemini-2.5-flash` | improveBlock |
+| Tier 3 premium | `gemini-3.5-flash` | generateDraft |
+| Fallback | Groq `llama-3.3-70b-versatile` | All tasks |
 
-## Page Geometry
+---
 
-| Page | Height cap | Width | Notes |
-|------|-----------|-------|-------|
-| Page 1 content area | `648.14pt` | `523.28pt` | `841.89 − 108.75 (header) − 20 (marginTop) − 65 (marginBottom)` |
-| Continuation content area | `743.89pt` | `523.28pt` | `841.89 − 50 (marginTop) − 48 (marginBottom)` |
-| Effective page 1 body | `648.14 − envelopeHeight` | `523.28pt` | Envelope occupies top of page 1 content area |
-
-## Partition Rules (priority order)
-
-| Step | Rule | Conditional? |
-|------|------|--------------|
-| 1 | Greedy fill | — |
-| 2 | Signatory overflow | Always |
-| 3a | `keepWithNext` — lone heading at bottom | **Unconditional** |
-| 3b | `sectionAffinity` — heading+intro reunited with section body | 70% fill guard |
-| 4 | Orphan check (< 55pt on next page) | Always |
-| 5 | Thin-page check (< 80pt visual on last page) | Always |
-| 6 | Empty-page cleanup | — |
-
-## Environment Variables
-
-```
-VITE_GEMINI_API_KEY=   # Required — Gemini Flash API key
-VITE_GROQ_API_KEY=     # Required — Groq API key (fallback)
-```
-
-## Deleted Files
-
-| File | Reason |
-|------|--------|
-| `src/pdf/useCompactLayout.ts` | Replaced by `partitionBlocks.ts`. Spacing compression approach abandoned — blocks are moved between pages instead. |
+## Key Constraints
+- Single `BlobProvider` only — never mount two PDF instances simultaneously (D010)
+- No localStorage/sessionStorage — all state in-memory (D004)
+- All AI calls go through `src/ai/adapter.ts` — never import gemini.ts/groq.ts in components
+- `partitionBlocks()` is the single source of truth for page layout — never rely on @react-pdf auto-overflow

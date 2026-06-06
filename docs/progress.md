@@ -44,40 +44,52 @@
 ### Phase 7 — Smart Pagination ✅
 - **Root cause fixed:** `LetterheadFirstPage` `flex:1` → `maxHeight:648.14` (content was expanding into footer zone)
 - **Continuation page rebuilt:** blank ivory, `marginTop:50pt`, `marginBottom:48pt`, watermark, page number bottom-right. Exports `CONT_CONTENT_MAX_HEIGHT` constant.
-- **`src/pdf/partitionBlocks.ts`** — pure partition function with 6-step pipeline:
-  1. Greedy fill (height caps: 648.14pt page 1, 743.89pt continuation)
-  2. Signatory overflow check
-  3a. `keepWithNext` — lone heading always moves (unconditional)
-  3b. `sectionAffinity` — heading+intro reunited with section body; **guarded by 70% fill rule** (if move drops source page below 70% of cap, skip — a small gap is less bad than a half-empty page)
-  4. Orphan check (< 55pt)
-  5. Thin-page check (< 80pt visual)
-  6. Empty-page cleanup
-- **`partitionDebug()`** export for console logging (currently active in `LetterheadDocument.tsx`)
+- **`src/pdf/partitionBlocks.ts`** — pure partition function with 6-step pipeline
 - **`LetterheadDocument.tsx`** rewritten: calls partition, renders explicit pages, signatory on last page only
 - **`useCompactLayout.ts`** deleted — no spacing compression, ever
+
+### Phase 6 — Draft Output, AI Improve Actions, Manual Editing UI ✅
+- **Blocker resolved:** `LetterheadDocument.tsx` switched from `partitionDebug()` → `partitionBlocks()`
+- **`src/ai/tasks/improveBlock.ts`** — Tier 2 per-block AI improve (Shorten / Expand / Formal / Rewrite / Custom instruction)
+- **`src/ai/prompts.ts`** — added `buildImproveBlockSystemPrompt` + `buildImproveBlockUserPrompt`
+- **`src/ai/adapter.ts`** — exports `improveBlock`, `ImproveBlockInput`, `ImproveAction`
+- **`src/store/sessionStore.ts`** — added `updateBlock(index, block)` and `updateEnvelope(partial)` actions
+- **`src/components/draft/EnvelopeFields.tsx`** — collapsible tap-to-edit panel (date, ref, subject, recipient)
+- **`src/components/draft/BlockList.tsx`** — scrollable block list with tap-to-select highlight, block type labels, 2-line preview
+- **`src/components/draft/BlockActionBar.tsx`** — sticky bottom sheet with 3 modes: AI actions (Shorten/Expand/Formal/Rewrite), Tell AI custom instruction, Manual text edit
+- **`src/screens/DraftScreen.tsx`** — full edit mode screen: sticky top bar with Preview toggle, envelope section, block list, action bar
+- **`src/App.tsx`** — wired `DraftScreen`, `updateBlock`, `updateEnvelope`; BottomNav hidden on draft screen
 
 ---
 
 ## Next Phase
 
-### Phase 6 — Draft Output, AI Improve Actions, Manual Editing UI
-*(Phase 7 pagination was implemented before phase 6 to unblock real-output testing)*
-- Show generated draft in an editable form
-- AI improve actions: Shorten, Expand, Make Formal, Rewrite (Tier 2)
-- Manual field editing (recipient, subject, date, ref)
-- Full re-generation from context (Tier 3)
+### Phase 8 — Preview and Export Polish
+- Back button from PreviewScreen → DraftScreen (currently goes to intake)
+- Download button improvements (filename, share sheet on iOS)
+- Print flow
+- AI provider badge (D021)
 
 ---
 
 ## Known Blockers / Open Issues
 
-**Pagination debug mode is active.** `LetterheadDocument.tsx` currently calls `partitionDebug()` instead of `partitionBlocks()`. Switch back before Phase 6 build.
+None. All PDF layout issues resolved. Debug mode cleared.
 
-All other PDF layout issues resolved. No active blockers.
+**Note:** `IntakeScreen` currently navigates to `'preview'` after draft generation. This should be changed to navigate to `'draft'` instead — so the user lands in edit mode first, then chooses to preview.
 
 ---
 
 ## Session Log
+
+### Session 8 — 2026-06-06
+- Cleared blocker: partitionDebug → partitionBlocks in LetterheadDocument.tsx
+- Built Phase 6: DraftScreen, EnvelopeFields, BlockList, BlockActionBar
+- Built improveBlock AI task (Tier 2 — Gemini standard + Groq fallback)
+- Added updateBlock + updateEnvelope to sessionStore
+- Wired DraftScreen into App.tsx
+- Decided: edit/preview as two full-screen modes with toggle (D026)
+- Decided: per-block AI improve (not whole-letter) (D027)
 
 ### Session 7 — 2026-06-06
 - Audited all PDF source files; corrected hallucinations from session 6 progress notes

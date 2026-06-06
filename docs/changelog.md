@@ -1,115 +1,102 @@
 # Changelog
 
-## Session 7 — 2026-06-06 (pagination & layout)
+## Session 8 — 2026-06-06
+
+### Fixed
+- `src/components/pdf/LetterheadDocument.tsx` — switched `partitionDebug()` → `partitionBlocks()`. Debug mode cleared.
 
 ### Added
-- `src/pdf/partitionBlocks.ts` — pure pagination function: `partitionBlocks(blocks, envelopeHeight) → { page1, continuations[], totalPages }`
-  - **Step 1:** Greedy fill — pack blocks into pages up to per-page height caps
-  - **Step 2:** Signatory overflow — if last block + signatory (92pt) exceed cap, last block moves to new page
-  - **Step 3a:** `keepWithNext` — lone heading at bottom of page always moves to next page (unconditional)
-  - **Step 3b:** `sectionAffinity` — if page ends with [heading → para] and next page opens with list/table, move both to next page. **Guarded by 70% fill rule**: if the move would leave the source page below 70% of its cap, skip — prefer a small visual gap over a half-empty page
-  - **Step 4:** Orphan check — if next page content < 55pt (~3 lines), move prev page’s last block forward
-  - **Step 5:** Thin-page check — if last page visual (content + signatory) < 80pt, move another block forward
-  - **Step 6:** Empty-page cleanup
-  - `partitionDebug()` export — same as `partitionBlocks()` but logs every block height, cumulative height, overflow flags, fill%, and final page assignments to console
-  - `MIN_FILL_RATIO = 0.70` — fill guard for sectionAffinity moves
-  - Imports `CONT_CONTENT_MAX_HEIGHT` from `LetterheadContinuationPage.tsx` — single source of truth
+- `src/ai/tasks/improveBlock.ts` — Tier 2 per-block AI improve task
+  - `ImproveAction`: `shorten | expand | formal | rewrite | custom`
+  - Tries Gemini standard (`gemini-2.5-flash`), falls back to Groq
+  - `parseBlock()` strips markdown fences defensively
+- `src/ai/prompts.ts` — added:
+  - `buildImproveBlockSystemPrompt()` — instructs AI to return same block type, no type changes
+  - `buildImproveBlockUserPrompt(input)` — maps action to instruction string, injects current block JSON
+  - `ACTION_INSTRUCTIONS` map for 4 preset actions
+- `src/ai/adapter.ts` — exports `improveBlock`, `ImproveBlockInput`, `ImproveAction`
+- `src/store/sessionStore.ts` — added:
+  - `updateBlock(index, block)` — immutably replaces one block in draft.blocks[]
+  - `updateEnvelope(partial)` — merges partial into draft.envelope
+- `src/components/draft/EnvelopeFields.tsx`
+  - Collapsible section (chevron toggle)
+  - Fields: Date, Ref No., Subject, Recipient (Name / Designation / Company / Address)
+  - Gold label style, ivory input background, 8px border-radius
+- `src/components/draft/BlockList.tsx`
+  - Renders each ContentBlock as a tappable card
+  - Selected block: gold border + warm tint background
+  - Block type label (uppercase gold), 2-line text preview
+  - Spacer/divider blocks shown but not selectable (opacity 0.5)
+- `src/components/draft/BlockActionBar.tsx`
+  - Fixed bottom sheet (position: fixed, bottom: 0)
+  - 3 modes: `actions` (default), `edit` (manual text), `custom` (free AI instruction)
+  - AI action row: ✂️ Shorten · 📝 Expand · 🎩 Formal · 🔄 Rewrite
+  - Secondary row: ✨ Tell AI... · ✏️ Edit (text-editable blocks only)
+  - Drag handle visual at top
+  - Loading state disables all buttons
+- `src/screens/DraftScreen.tsx`
+  - Sticky dark-brown top bar: ← Back, "Edit Draft" title, 👁 Preview button
+  - Scrollable content: error banner, EnvelopeFields, block count label, AI loading indicator, BlockList
+  - BlockActionBar mounts when a block is selected
+  - `paddingBottom` grows when action bar is visible to prevent content clip
+  - Empty state with Back to Intake button when no draft exists
 
 ### Changed
-- `src/components/pdf/LetterheadFirstPage.tsx`
-  - Replaced `flex:1` with `maxHeight: 648.14` on `contentArea`
-  - Root cause of footer overlap: `flex:1` expanded container beyond intended 648.14pt
-  - Added detailed geometry comment
+- `src/App.tsx`
+  - Imports and renders `DraftScreen`
+  - Passes `updateBlock` + `updateEnvelope` from `useSessionStore()`
+  - `BottomNav` hidden on `draft` screen (in addition to `intake` and `preview`)
 
-- `src/components/pdf/LetterheadContinuationPage.tsx` — complete rewrite
-  - Removed top bar, brand elements, Helvetica fonts
-  - New design: plain ivory, watermark, `marginTop: 50pt` (increased from 36pt for deliberate breathing room), `marginBottom: 48pt`, page number at bottom-right
-  - Exports `CONT_CONTENT_MAX_HEIGHT = 743.89pt` constant (imported by `partitionBlocks.ts`)
-  - Available content: 743.89 × 523.28pt
+---
 
+## Session 7 — 2026-06-06
+
+### Fixed
+- `src/components/pdf/LetterheadFirstPage.tsx` — `flex:1` → `maxHeight:648.14` on content area (root cause of footer overlap)
+
+### Added
+- `src/pdf/partitionBlocks.ts` — pure pagination function
+  - Greedy fill with per-page height caps (648.14pt page 1, 743.89pt continuation)
+  - Signatory overflow check
+  - `keepWithNext` — unconditional lone-heading move
+  - `sectionAffinity` — heading+intro reunite with section body (70% fill guard)
+  - Orphan check (< 55pt), thin-page check (< 80pt), empty-page cleanup
+  - Exports `partitionBlocks()` (production) and `partitionDebug()` (console logging)
+
+### Changed
+- `src/components/pdf/LetterheadContinuationPage.tsx` — rebuilt
+  - Clean ivory, correct fonts, `marginTop:50pt`, `marginBottom:48pt`
+  - Page number `position:absolute, bottom:18, right:36`
+  - Exports `CONT_CONTENT_MAX_HEIGHT = 743.89` constant
 - `src/components/pdf/LetterheadDocument.tsx` — rewritten
   - Calls `partitionBlocks()` / `partitionDebug()` to get page assignments
   - Renders explicit `LetterheadFirstPage` + N `LetterheadContinuationPage` elements
   - Signatory only on last page
-  - `spacingScale` always 1.0 — no compression
 
-### Deleted
-- `src/pdf/useCompactLayout.ts` — removed entirely; replaced by partition approach
-
-### Fixed (estimator corrections)
-- Heading 1 height: `14+10+6=30pt` → `12+8+6=26pt` (matched to `BodyRenderer BASE`)
-- List container: removed false `+4pt` padding (BodyRenderer `View` has no container padding)
-
----
-
-## Session 7 — 2026-06-06 (layout audit, earlier in session)
-
-### Fixed
-- `src/components/pdf/LetterheadFirstPage.tsx` — `flex:1` → `maxHeight:648.14` (footer overlap root cause)
-
-### Redesigned  
-- `src/components/pdf/LetterheadContinuationPage.tsx` — plain ivory page, correct fonts, page number
-
-### Documentation Corrections
-- `docs/progress.md` — removed hallucinated blockers from session 6 log
-- `docs/decisions.md` — corrected D023 to reflect auto-overflow was interim, partition is final
+### Removed
+- `src/pdf/useCompactLayout.ts` — deleted (replaced by partitionBlocks approach)
 
 ---
 
 ## Session 6 — 2026-06-06
-
-### Fixed
-- `src/components/pdf/Footer.tsx` — `render` prop hides footer on pages 2+
-- `src/components/pdf/Signatory.tsx` — flow layout, `marginTop:24`; follows content to correct page
-- `src/pdf/useCompactLayout.ts` — recalibrated `CHARS_PER_LINE` (65→80), added `SIGNATORY_HEIGHT=92pt`, adjusted `WIDOW_THRESHOLD` (0.60→0.50)
-
----
+- Fixed Footer render prop
+- Fixed Signatory flow layout
+- Fixed useCompactLayout constants
 
 ## Session 5 — 2026-06-06
-
-### Added
-- `src/ai/types.ts` — `TaskTier`, `PipelineContext`
-- `src/ai/models.ts` — tier → model mapping
-- `src/ai/tasks/classifyIntent.ts`, `generateClarification.ts`, `generateDraft.ts`
-- `src/screens/IntakeScreen.tsx` — full pipeline UI
-
-### Changed
-- `src/ai/prompts.ts`, `gemini.ts`, `groq.ts`, `adapter.ts`, `sessionStore.ts` — tiered pipeline wiring
-
----
+- Tiered AI routing (D022)
+- Phase 5 intake pipeline with PipelineContext
 
 ## Session 4 — 2026-06-06
-
-### Added
-- `src/types/document.ts`, `src/components/pdf/BodyRenderer.tsx`, `src/store/sessionStore.ts` update
-- `src/ai/types.ts`, `prompts.ts`, `gemini.ts`, `groq.ts`, `adapter.ts`, `.env.example`
-
-### Fixed
-- `src/constants/brand.ts` — missing `COLORS.text`, `COLORS.darkBrown`, `FONTS.bodySemiBold`
-
----
+- Phase 3: document schema (document.ts, BodyRenderer)
+- Phase 4: AI provider abstraction (gemini.ts, groq.ts, adapter.ts)
 
 ## Session 3 — 2026-06-05
-
-### Changed
-- Header, Footer redesigned; `brand.ts` updated; Playfair Display SC registered
-
-### Removed
-- Stamp container from Signatory
-
----
+- Redesigned Header/Footer with Playfair Display SC
+- brand.ts constants
 
 ## Session 2 — 2026-06-04
-
-### Fixed
-- Buffer polyfill, font registration, export button, mobile preview, ivory bleed, PWA deprecation
-
-### Changed
-- Letterhead design: dark band → full ivory (D014)
-
----
+- Buffer polyfill, font registration, export fix, mobile preview, ivory bleed
 
 ## Session 1 — 2026-06-03
-
-### Added
-- Full project scaffold: React+Vite+TS, PWA, brand tokens, shell UI, PDF engine foundation
+- Phases 1 and 2 scaffolded

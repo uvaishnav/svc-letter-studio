@@ -136,8 +136,8 @@
 ## D022 — Tiered AI Model Routing
 **Decision:** Three tiers mapped to different Gemini Flash models. All fall back to Groq.
 - Tier 1 (lightweight): `gemini-2.0-flash` — classify, clarify
-- Tier 2 (standard): `gemini-2.5-flash` — reserved
-- Tier 3 (premium): `gemini-3.5-flash` — draft generation, improve actions
+- Tier 2 (standard): `gemini-2.5-flash` — per-block improve actions
+- Tier 3 (premium): `gemini-3.5-flash` — draft generation
 
 **Context:** `PipelineContext` built incrementally and passed in full to premium model.
 **Status:** Final
@@ -146,46 +146,31 @@
 
 ## D023 — Multi-page PDF Layout Strategy
 **Decision:** Explicit block-level pagination via `src/pdf/partitionBlocks.ts`. `@react-pdf/renderer` auto-overflow is NOT relied upon for multi-page content.
-
-**Why not auto-overflow:**
-1. `flex:1` on `contentArea` expanded the container beyond its 648.14pt cap — content touched the footer gold line.
-2. Auto-overflow has no block-awareness — it splits mid-paragraph, produces orphan lines, cannot apply heading/section rules.
-
-**Partition pipeline (6 steps):**
-1. Greedy fill — height caps: 648.14pt (page 1), 743.89pt (continuation)
-2. Signatory overflow — last block moves if content + 92pt signatory exceeds cap
-3a. `keepWithNext` — lone heading at page bottom always moves (unconditional)
-3b. `sectionAffinity` — heading+intro move to reunite with section list/table body (70% fill guarded)
-4. Orphan check — < 55pt on next page pulls a block forward
-5. Thin-page check — last page visual < 80pt pulls a block forward
-6. Empty-page cleanup
-
 **Status:** Final
 
 ---
 
 ## D024 — Continuation Page Design
 **Decision:** Blank ivory page, watermark, `marginTop:50pt`, `marginBottom:48pt`, page number at `position:absolute, bottom:18, right:36`.
-- No branding elements repeated on continuation pages.
-- `marginTop:50pt`: deliberate breathing room that visually signals content continuation (increased from 36pt — 36 felt too tight).
-- `CONT_CONTENT_MAX_HEIGHT = 743.89pt` exported from the component as a constant and imported by `partitionBlocks.ts` (single source of truth).
-
 **Status:** Final
 
 ---
 
 ## D025 — Section Affinity 70% Fill Guard
-**Decision:** The `sectionAffinity` rule (which moves a heading+intro para to the next page to reunite them with their section body) is guarded by a minimum fill ratio of **70%**.
+**Decision:** The `sectionAffinity` rule is guarded by a minimum fill ratio of **70%**. Below 70%, skip the move and let content break naturally.
+**Status:** Final
 
-**Rule:** Before moving blocks, compute what the source page fill would be after the move. If it would drop below `cap × 0.70`, skip the move entirely. Let `@react-pdf` break the content naturally inside the block.
+---
 
-**Why 70%:**
-- A 46pt gap at the bottom of a 75%-filled page looks like deliberate section spacing.
-- Moving 74pt (heading + intro) from a page at 75% fill drops it to 60% — nearly half-empty, very visible.
-- 70% is the crossover point: above it, a small gap is acceptable; below it, the page looks broken.
+## D026 — Edit / Preview UX Pattern
+**Decision:** Full-screen mode toggle between `DraftScreen` (edit) and `PreviewScreen` (PDF preview). Never split-panel.
+**Reason:** A4 PDF at 65% height on iPhone renders too small to be useful. Full-screen for each mode gives the best experience. PDF re-renders in background while editing so Preview is instant when toggled.
+**Status:** Final
 
-**Exception:** `keepWithNext` (lone bare heading) is **unconditional** — a heading with nothing below it on a page is always typographically wrong, regardless of fill.
+---
 
-**Applies to:** All pages (page 1 and continuation pages use the same ratio against their respective caps).
-
+## D027 — AI Improve Scope
+**Decision:** Per-block AI improve only. No whole-letter regeneration from DraftScreen.
+**Reason:** AI already produces a good initial draft. Re-generating everything for a small change is wasteful and slow. Per-block actions (Shorten / Expand / Formal / Rewrite / Custom) give precise, fast edits.
+**Tier:** Tier 2 (standard — `gemini-2.5-flash`)
 **Status:** Final
