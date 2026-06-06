@@ -49,7 +49,6 @@
 - **`useCompactLayout.ts`** deleted — no spacing compression, ever
 
 ### Phase 6 — Draft Output, AI Improve Actions, Manual Editing UI ✅
-- **Blocker resolved:** `LetterheadDocument.tsx` switched from `partitionDebug()` → `partitionBlocks()`
 - **`src/ai/tasks/improveBlock.ts`** — Tier 2 per-block AI improve (Shorten / Expand / Formal / Rewrite / Custom instruction)
 - **`src/ai/prompts.ts`** — added `buildImproveBlockSystemPrompt` + `buildImproveBlockUserPrompt`
 - **`src/ai/adapter.ts`** — exports `improveBlock`, `ImproveBlockInput`, `ImproveAction`
@@ -64,6 +63,7 @@
 - **`src/components/draft/BlockActionBar.tsx`** — sticky bottom sheet: AI presets + Tell AI custom + manual edit modes
 - **`src/screens/DraftScreen.tsx`** — full edit mode screen with hint text, error banner, Preview toggle
 - **`src/screens/PreviewScreen.tsx`** — ✏️ Edit toggle button navigates back to DraftScreen
+- **`src/screens/IntakeScreen.tsx`** — navigate target changed to `'draft'` after generation (fixed manually)
 - **`src/App.tsx`** — wired `DraftScreen`, `updateBlock`, `updateEnvelope`; BottomNav hidden on draft screen
 
 ---
@@ -71,21 +71,24 @@
 ## Next Phase
 
 ### Phase 8 — Preview and Export Polish
-- Download filename improvement (already done: `SVC-{docType}-{date}.pdf`)
-- Share sheet on iOS (Web Share API)
+- Share sheet on iOS (Web Share API) — tap Download → native share sheet
 - Print flow
 - AI provider badge (D021 — already in PreviewScreen, verify it shows correctly)
-- **Pending:** `IntakeScreen` currently navigates to `'preview'` after draft generation — change to `'draft'`
+- Download filename already done: `SVC-{docType}-{date}.pdf`
 
 ---
 
 ## Known Blockers / Open Issues
 
-**`IntakeScreen` post-draft navigation:** After AI generates a draft, `IntakeScreen` calls `navigate('preview')`. This should be changed to `navigate('draft')` so users land in edit mode first. One-line fix in `src/screens/IntakeScreen.tsx`.
+None.
 
 ---
 
 ## Session Log
+
+### Session 8c — 2026-06-06
+- IntakeScreen navigate('preview') → navigate('draft') fixed manually by user
+- All Phase 6 blockers cleared — Phase 6 fully complete
 
 ### Session 8b — 2026-06-06
 - Fixed PreviewScreen: added ✏️ Edit toggle (back to DraftScreen)
