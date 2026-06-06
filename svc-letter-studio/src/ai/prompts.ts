@@ -70,26 +70,33 @@ Generate one clarifying question.`;
 }
 
 // ─── TASK 3: Full draft generation (Tier 3 — premium) ──────────────────────
+// IMPORTANT: The JSON schema here MUST match the LetterDraft TypeScript interface
+// in src/types/document.ts exactly. Do NOT use flat fields like recipientName.
 export function buildDraftSystemPrompt(): string {
   return `${svcContext()}
 
 You are generating a complete formal business document for Sri Vaishnav Constructions.
 
-You must return ONLY a raw valid JSON object. No markdown, no code fences, no explanation whatsoever.
+You must return ONLY a raw valid JSON object matching this EXACT structure. No markdown, no code fences, no explanation.
 
-Exact structure required:
 {
   "envelope": {
-    "documentType": "<type string>",
-    "date": "<use today: ${todayDateString()}>",
-    "refNumber": "<ref string or null>",
-    "recipientName": "<full name>",
-    "recipientAddress": "<full address>",
-    "subject": "<subject line>",
-    "signatoryName": "UPPALAPATI SUREKHA",
-    "signatoryDesignation": "Proprietor"
+    "documentType": "<string>",
+    "date": "${todayDateString()}",
+    "refNumber": "<string or null>",
+    "subject": "<subject line string>",
+    "recipient": {
+      "name": "<recipient full name>",
+      "designation": "<recipient designation or null>",
+      "company": "<recipient company or null>",
+      "address": "<recipient full address>"
+    },
+    "signatory": {
+      "name": "UPPALAPATI SUREKHA",
+      "designation": "Proprietor"
+    }
   },
-  "body": [
+  "blocks": [
     { "type": "paragraph", "text": "<string>" },
     { "type": "heading", "level": 1, "text": "<string>" },
     { "type": "heading", "level": 2, "text": "<string>" },
@@ -102,12 +109,12 @@ Exact structure required:
 }
 
 Rules:
-- body array MUST have at least 3 blocks. Never return an empty body.
-- Start with a formal salutation paragraph (e.g. "Respected Sir/Madam,")
-- End with a closing paragraph (e.g. "Thanking you...")
-- Use tables for pricing or equipment lists. Use bullet_list for enumerated points.
-- Choose block types that best match the document content.
-- The "date" field in envelope must be exactly: ${todayDateString()}`;
+- The top-level body array key is "blocks" (not "body").
+- blocks array MUST have at least 3 items. Never return an empty blocks array.
+- Start with a formal salutation paragraph (e.g. "Respected Sir/Madam,").
+- End with a closing paragraph (e.g. "Thanking you, Yours faithfully,").
+- Use tables for equipment lists or pricing. Use bullet_list for enumerated points.
+- The "date" field must be exactly: ${todayDateString()}`;
 }
 
 export function buildDraftUserPrompt(ctx: PipelineContext): string {
@@ -127,11 +134,11 @@ export function buildDraftUserPrompt(ctx: PipelineContext): string {
   }
 
   parts.push(`\nToday's date is ${todayDateString()}. Use this as the document date.`);
-  parts.push(`Generate the complete formal document JSON now. Return raw JSON only — no markdown fences.`);
+  parts.push(`Generate the complete formal document JSON now. Return raw JSON only — no markdown fences. Use "blocks" (not "body") for the content array.`);
   return parts.join('\n');
 }
 
-// ─── Legacy helpers (used by gemini.ts / groq.ts directly) ─────────────────
+// ─── Legacy helpers ─────────────────────────────────────────────────────────
 export function buildSystemPrompt(): string {
   return buildDraftSystemPrompt();
 }
