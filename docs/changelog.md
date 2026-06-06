@@ -1,5 +1,22 @@
 # Changelog
 
+## Session 6 — 2026-06-06
+
+### Fixed
+- `src/components/pdf/Footer.tsx` — added `render={({ pageNumber }) => pageNumber > 1 ? null : <.../>}` to `fixed` View; footer now renders on page 1 only, invisible on all overflow pages
+- `src/components/pdf/Signatory.tsx` — changed from `position: absolute, bottom: 0` to flow layout (`marginTop: 24, alignItems: flex-end`); signatory now renders after the last content block on whichever page the content ends
+- `src/pdf/useCompactLayout.ts` — recalibrated constants from real component source:
+  - `CHARS_PER_LINE`: 65 → 80 (actual geometry: 523pt content width ÷ ~6.5pt/char for Montserrat 10pt)
+  - Added `SIGNATORY_HEIGHT = 92pt` to `estimateTotalHeight()` (signatory is now a flow element)
+  - `WIDOW_THRESHOLD`: 0.60 → 0.50
+  - Fixed comment accuracy throughout
+
+### Decisions
+- D016: Updated — Signatory now flow-positioned, not absolute (supersedes session 3 decision)
+- D023: New — multi-page PDF layout strategy documented
+
+---
+
 ## Session 5 — 2026-06-06
 
 ### Added

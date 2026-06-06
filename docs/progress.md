@@ -15,7 +15,7 @@
 - `Header` — ivory bg, logo + Playfair Display SC brand name, gold dash ornaments, Montserrat tagline, full-width gold hairline rule
 - `Footer` — ivory bg, gold hairline rule on top, phone | GSTIN | email row, address centered below
 - `Watermark` — centred logo at 3.2% opacity, 220px
-- `Signatory` — absolutely positioned to bottom of content area (above footer), right-aligned, signature ruled line, name + designation
+- `Signatory` — flow-positioned after last content block; renders on whichever page content ends
 - `PreviewScreen` — single BlobProvider, inline `<object>` preview on all devices, download button
 - Self-hosted font loading from `public/fonts/` via `src/pdf/fonts.ts`
 - Buffer polyfill shim in `main.tsx`
@@ -72,6 +72,20 @@
 
 ---
 
+## Known Blockers / Open Issues
+
+### Multi-page PDF layout — partially resolved (session 6)
+Symptoms fixed so far:
+- ✅ Footer no longer repeats on page 2 (was `fixed`, now uses `fixed` + `render` prop with page condition)
+- ✅ Signatory now flows after content (was `position:absolute` anchored to page 1 bottom)
+
+Remaining issue (to fix next session):
+- ⚠️ Page 2 has no header/branding — raw overflow page looks bare
+- ⚠️ `useCompactLayout` widow detection is functional but estimation accuracy needs further calibration against real PDFs
+- ⚠️ `LetterheadContinuationPage` component exists but is not yet wired into the multi-page flow
+
+---
+
 ## Session Log
 
 ### Session 1 — 2026-06-03
@@ -117,3 +131,11 @@
 - Built `IntakeScreen.tsx`: full UI with loading states, tier badge, clarification step, error handling
 - Updated `prompts.ts`: task-specific prompt builders (classify, clarify, draft)
 - Logged D022 in decisions.md
+
+### Session 6 — 2026-06-06
+- Diagnosed multi-page PDF layout issues from real PDF output
+- Fixed: `Footer` — added `render` prop to `fixed` View; footer now shows on page 1 only, hidden on page 2+
+- Fixed: `Signatory` — changed from `position:absolute` to flow layout (`marginTop:24`); now renders after last content block on whichever page content ends
+- Fixed: `useCompactLayout` — recalibrated `CHARS_PER_LINE` to 80 (from actual geometry: 523pt ÷ 6.5pt/char), added `SIGNATORY_HEIGHT: 92pt` to body estimate, set `WIDOW_THRESHOLD: 0.50`
+- Updated D016 (Signatory positioning) in decisions.md
+- Remaining issues noted in blockers above — to continue next session

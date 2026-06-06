@@ -108,8 +108,9 @@
 ---
 
 ## D016 — Signatory Positioning
-**Decision:** `Signatory` uses `position: absolute, bottom: 0` within the content area.
-**Reason:** Ensures signatory always appears at the bottom of the page regardless of content length. On empty letterheads it sits just above the footer. Content area has `marginBottom: 65` which clears the footer height.
+**Decision:** `Signatory` uses flow layout (`marginTop: 24`) — renders immediately after the last content block on whichever page the content ends.
+**Reason:** `position: absolute` anchored the signatory to the bottom of page 1 only. On letters whose content overflows to page 2, the signatory must follow the content — not stay pinned to page 1. Flow positioning achieves this naturally.
+**Supersedes:** Previous decision (session 3) to use `position: absolute, bottom: 0`.
 **Status:** Final
 
 ---
@@ -168,3 +169,13 @@
 
 **Reason:** Better models have lower rate limits. Trivial tasks (classification, one-question generation) do not need premium intelligence. Reserving the premium quota for draft generation maximises output quality within API limits.
 **Status:** Final
+
+---
+
+## D023 — Multi-page PDF Layout Strategy
+**Decision:** Use react-pdf's natural overflow flow for multi-page letters. Footer uses `fixed` + `render` prop to show on page 1 only. Signatory is flow-positioned (not absolute). `LetterheadContinuationPage` is reserved for future use if page 2 branding is needed.
+**Reason:**
+- `Footer` with bare `fixed` repeated on every auto-generated overflow page — unwanted on page 2+. The `render={({ pageNumber }) => pageNumber > 1 ? null : <.../>}` pattern conditionally hides it.
+- `Signatory` with `position:absolute` always anchored to page 1 bottom. For long letters whose content overflows, signatory must follow content to page 2. Flow layout achieves this.
+- `LetterheadContinuationPage` can be wired in future if page 2 needs a minimal top-bar / branding header.
+**Status:** Active — page 2 header/branding still an open issue for next session.
