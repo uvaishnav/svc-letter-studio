@@ -1,49 +1,61 @@
 import type { AIInput, AIProvider } from './types';
 import type { LetterDraft } from '../types/document';
 import { buildSystemPrompt, buildUserPrompt } from './prompts';
-
-const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent';
+import { geminiUrl } from './models';
 
 export class GeminiProvider implements AIProvider {
   private apiKey: string;
 
   constructor() {
-    const key = import.meta.env.VITE_GEMINI_API_KEY as string | undefined;
-    if (!key) throw new Error('VITE_GEMINI_API_KEY is not set');
-    this.apiKey = key;
+    this.apiKey = import.meta.env.VITE_GEMINI_API_KEY ?? '';
+    if (!this.apiKey) throw new Error('VITE_GEMINI_API_KEY is not set');
   }
 
   async generateDraft(input: AIInput): Promise<LetterDraft> {
-    const response = await fetch(`${GEMINI_API_URL}?key=${this.apiKey}`, {
+    // Legacy path always uses premium tier
+    return this._call(buildSystemPrompt(), buildUserPrompt(input), 'premium');
+  }
+
+  // Internal helper used by task modules
+  async call(
+    systemPrompt: string,
+    userPrompt: string,
+    tier: import('./types').TaskTier = 'premium'
+  ): Promise<string> {
+    const url = `${geminiUrl(tier)}?key=${this.apiKey}`;
+    const body = {
+      systemInstruction: { parts: [{ text: systemPrompt }] },
+      contents: [{ role: 'user', parts: [{ text: userPrompt }] }],
+      generationConfig: {
+        responseMimeType: 'application/json',
+        maxOutputTokens: tier === 'premium' ? 8192 : 2048,
+        temperature: tier === 'lightweight' ? 0.1 : 0.7,
+      },
+    };
+
+    const res = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        system_instruction: {
-          parts: [{ text: buildSystemPrompt() }],
-        },
-        contents: [
-          {
-            role: 'user',
-            parts: [{ text: buildUserPrompt(input) }],
-          },
-        ],
-        generationConfig: {
-          temperature: 0.4,
-          maxOutputTokens: 8192,
-          responseMimeType: 'application/json',
-        },
-      }),
+      body: JSON.stringify(body),
     });
 
-    if (!response.ok) {
-      const err = await response.text();
-      throw new Error(`Gemini API error ${response.status}: ${err}`);
+    if (!res.ok) {
+      const err = await res.text();
+      throw new Error(`Gemini ${tier} error: ${res.status} — ${err}`);
     }
 
-    const data = await response.json();
-    const text: string = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
-    if (!text) throw new Error('Gemini returned empty response');
+    const json = await res.json();
+    return json.candidates?.[0]?.content?.parts?.[0]?.text ?? '{}';
+  }
 
-    return JSON.parse(text) as LetterDraft;
+  private async _call(
+    systemPrompt: string,
+    userPrompt: string,
+    tier: import('./types').TaskTier
+  ): Promise<LetterDraft> {
+    const raw = await this.call(systemPrompt, userPrompt, tier);
+    const parsed = JSON.parse(raw);
+    if (!parsed.envelope || !parsed.body) throw new Error('Invalid draft shape from Gemini');
+    return parsed as LetterDraft;
   }
 }

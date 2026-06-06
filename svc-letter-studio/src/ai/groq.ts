@@ -9,13 +9,19 @@ export class GroqProvider implements AIProvider {
   private apiKey: string;
 
   constructor() {
-    const key = import.meta.env.VITE_GROQ_API_KEY as string | undefined;
-    if (!key) throw new Error('VITE_GROQ_API_KEY is not set');
-    this.apiKey = key;
+    this.apiKey = import.meta.env.VITE_GROQ_API_KEY ?? '';
+    if (!this.apiKey) throw new Error('VITE_GROQ_API_KEY is not set');
   }
 
   async generateDraft(input: AIInput): Promise<LetterDraft> {
-    const response = await fetch(GROQ_API_URL, {
+    return this.call(buildSystemPrompt(), buildUserPrompt(input));
+  }
+
+  // Generic text call — used by task modules as fallback
+  async call(systemPrompt: string, userPrompt: string): Promise<string>;
+  async call(systemPrompt: string, userPrompt: string, returnDraft: true): Promise<LetterDraft>;
+  async call(systemPrompt: string, userPrompt: string, returnDraft?: boolean): Promise<string | LetterDraft> {
+    const res = await fetch(GROQ_API_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -24,24 +30,26 @@ export class GroqProvider implements AIProvider {
       body: JSON.stringify({
         model: GROQ_MODEL,
         messages: [
-          { role: 'system', content: buildSystemPrompt() },
-          { role: 'user', content: buildUserPrompt(input) },
+          { role: 'system', content: systemPrompt },
+          { role: 'user',   content: userPrompt },
         ],
-        temperature: 0.4,
-        max_tokens: 2048,
         response_format: { type: 'json_object' },
+        temperature: 0.7,
       }),
     });
 
-    if (!response.ok) {
-      const err = await response.text();
-      throw new Error(`Groq API error ${response.status}: ${err}`);
+    if (!res.ok) {
+      const err = await res.text();
+      throw new Error(`Groq error: ${res.status} — ${err}`);
     }
 
-    const data = await response.json();
-    const text: string = data?.choices?.[0]?.message?.content ?? '';
-    if (!text) throw new Error('Groq returned empty response');
+    const json = await res.json();
+    const raw: string = json.choices?.[0]?.message?.content ?? '{}';
 
-    return JSON.parse(text) as LetterDraft;
+    if (!returnDraft) return raw;
+
+    const parsed = JSON.parse(raw);
+    if (!parsed.envelope || !parsed.body) throw new Error('Invalid draft shape from Groq');
+    return parsed as LetterDraft;
   }
 }
