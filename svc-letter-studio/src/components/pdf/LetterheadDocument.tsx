@@ -1,6 +1,6 @@
 import { Document, View, Text, StyleSheet } from '@react-pdf/renderer'
 import '../../pdf/fonts'
-import { DEFAULT_SIGNATORY, DEFAULT_PDF_SETTINGS } from '../../store/sessionStore'
+import { DEFAULT_SIGNATORY, DEFAULT_PDF_SETTINGS } from '../../constants/defaults'
 import type { LetterDraft } from '../../types/document'
 import { partitionBlocks } from '../../pdf/partitionBlocks'
 import LetterheadFirstPage from './LetterheadFirstPage'
