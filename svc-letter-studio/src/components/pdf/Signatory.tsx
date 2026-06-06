@@ -2,12 +2,11 @@ import { View, Text, StyleSheet } from '@react-pdf/renderer'
 import { COLORS } from '../../constants/brand'
 
 const S = StyleSheet.create({
+  // Flow-positioned: renders immediately after the last content block.
+  // If content fits on page 1, signatory is on page 1.
+  // If content overflows to page 2, signatory follows on page 2.
   container: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    marginHorizontal: 36,
+    marginTop: 24,
     alignItems: 'flex-end',
   },
   signatureBox: {
