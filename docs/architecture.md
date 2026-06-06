@@ -10,11 +10,16 @@ svc-letter-studio/
 │   └── manifest.webmanifest
 ├── src/
 │   ├── ai/
-│   │   ├── types.ts                 # AIInput, AIOutput, AIProvider interface
-│   │   ├── prompts.ts               # buildSystemPrompt(), buildUserPrompt() — shared
-│   │   ├── gemini.ts                # GeminiProvider (Gemini 2.0 Flash)
-│   │   ├── groq.ts                  # GroqProvider (llama-3.3-70b-versatile)
-│   │   └── adapter.ts               # generateDraft() — primary entry point, fallback routing
+│   │   ├── types.ts                 # AIInput, AIOutput, AIProvider, TaskTier, PipelineContext
+│   │   ├── models.ts                # geminiUrl(tier), geminiModelName(tier) — tier → model resolver
+│   │   ├── prompts.ts               # Task-specific prompt builders (classify, clarify, draft)
+│   │   ├── gemini.ts                # GeminiProvider — generateDraft() + call(system, user, tier)
+│   │   ├── groq.ts                  # GroqProvider — generateDraft() + call(system, user)
+│   │   ├── adapter.ts               # Pipeline orchestrator — ONLY file components import
+│   │   └── tasks/
+│   │       ├── classifyIntent.ts    # Tier 1: intent detection + field extraction
+│   │       ├── generateClarification.ts  # Tier 1: one clarifying question
+│   │       └── generateDraft.ts     # Tier 3: full LetterDraft generation
 │   ├── components/
 │   │   └── pdf/
 │   │       ├── LetterheadDocument.tsx
@@ -31,11 +36,11 @@ svc-letter-studio/
 │   │   └── fonts.ts                 # Font.register() calls for @react-pdf/renderer
 │   ├── screens/
 │   │   ├── HomeScreen.tsx
-│   │   ├── IntakeScreen.tsx         # Phase 5 (not yet built)
+│   │   ├── IntakeScreen.tsx         # Phase 5 ✅ — full AI intake + clarification pipeline
 │   │   ├── PreviewScreen.tsx
 │   │   └── SettingsScreen.tsx
 │   ├── store/
-│   │   └── sessionStore.ts          # SessionState, useSessionStore(), createEmptyDraft()
+│   │   └── sessionStore.ts          # SessionState (+ pipelineCtx), useSessionStore(), createEmptyDraft()
 │   ├── types/
 │   │   └── document.ts              # DocumentType, ContentBlock union, DocumentEnvelope, LetterDraft
 │   ├── App.tsx                      # Screen router + BottomNav visibility + bg color
@@ -54,39 +59,60 @@ svc-letter-studio/
 └── package.json
 ```
 
-## AI Call Flow
+## Tiered AI Call Flow (Phase 5+)
 
 ```
-Component / Screen
-       │
-       ▼
- generateDraft(AIInput)        ← src/ai/adapter.ts  (only import allowed by components)
-       │
-       ├── GeminiProvider.generateDraft()   → Gemini 2.0 Flash REST API
-       │         ↓ on error
-       └── GroqProvider.generateDraft()     → Groq llama-3.3-70b REST API
-               ↓
-         LetterDraft  →  sessionStore  →  PreviewScreen
+IntakeScreen
+     │
+     ▼
+classifyPipeline(rawInput)           ← Tier 1: gemini-2.0-flash
+     │  returns PipelineContext
+     ▼
+clarifyPipeline(ctx)                 ← Tier 1: gemini-2.0-flash (only if missingFields > 0)
+     │  returns { ctx, question }
+     │
+     ├── question? → show to user → user answers → enrich ctx
+     │
+     ▼
+draftPipeline(ctx)                   ← Tier 3: gemini-3.5-flash
+     │  receives FULL enriched PipelineContext (no information loss)
+     ▼
+AIOutput { draft: LetterDraft, provider }
+     │
+     ▼
+sessionStore  →  PreviewScreen
+```
+
+## Fallback Strategy (all tiers)
+
+```
+Tier 1/2/3 Gemini call
+     │
+     ├── success → return result
+     └── error   → Groq llama-3.3-70b-versatile (same prompt, JSON mode)
 ```
 
 ## Data Flow
 
 ```
-User text input
-       │
-  AIInput { userText, documentType?, clarifications? }
-       │
-  generateDraft() in adapter.ts
-       │
-  LetterDraft { envelope: DocumentEnvelope, body: ContentBlock[] }
-       │
-  sessionStore.draft
-       │
-  LetterheadDocument (PDF)
+User text input (IntakeScreen)
+     │
+ PipelineContext { rawInput }
+     │  + classifyIntent (Tier 1)
+ PipelineContext { rawInput, documentType, detectedFields, missingFields }
+     │  + clarification (Tier 1, optional)
+ PipelineContext { ..., clarificationQuestion, clarificationAnswer }
+     │  + generateDraft (Tier 3)
+ LetterDraft { envelope: DocumentEnvelope, body: ContentBlock[] }
+     │
+ sessionStore.draft
+     │
+ LetterheadDocument (PDF)
 ```
 
 ## Key Rules
 - Buffer polyfill IIFE in `main.tsx` must always be the first executed code
-- All AI calls must go through `src/ai/adapter.ts` — never import gemini.ts or groq.ts directly
+- All AI calls must go through `src/ai/adapter.ts` — never import gemini.ts, groq.ts, or task files directly in components
 - No localStorage / sessionStorage anywhere
 - Fonts must be TTF, self-hosted in `public/fonts/`
+- Tier assignment lives in `src/ai/models.ts` — never hardcode model names elsewhere

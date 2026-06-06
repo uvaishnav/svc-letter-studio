@@ -123,8 +123,9 @@
 ---
 
 ## D018 — AI Gemini Model Version
-**Decision:** Use `gemini-2.0-flash` model via REST API with `responseMimeType: application/json`.
-**Reason:** Flash variant is fast and cost-effective for structured generation. Native JSON mode eliminates need to strip markdown fences from output.
+**Decision:** Use `gemini-3.5-flash` model via REST API with `responseMimeType: application/json`.
+**Supersedes:** Original decision to use `gemini-2.0-flash`.
+**Reason:** Gemini 3.5 Flash (released Google I/O 2026, May 19) delivers near-Pro intelligence at Flash speed. Key improvements: 65K output tokens (vs 8K in 2.0 Flash), better structured output adherence, stronger instruction-following. Free tier via Google AI Studio. One-line model name change.
 **Status:** Final
 
 ---
@@ -137,6 +138,33 @@
 ---
 
 ## D020 — Shared Prompt Layer
-**Decision:** `buildSystemPrompt()` and `buildUserPrompt()` in `src/ai/prompts.ts` are shared by both providers.
+**Decision:** Task-specific prompt builders in `src/ai/prompts.ts` shared across all providers.
 **Reason:** Single source of truth for prompt logic. Changing tone, rules, or schema only requires editing one file.
+**Status:** Final (updated from generic buildSystemPrompt/buildUserPrompt to task-specific builders)
+
+---
+
+## D021 — AI Provider Visibility in UI
+**Decision:** Show a small badge in `PreviewScreen` indicating which AI provider generated the current draft (Gemini 3.5 Flash or Groq · Llama 3.3). Stored as `aiProvider: 'gemini' | 'groq' | null` in `SessionState`. Badge is hidden when `aiProvider` is null (e.g. empty/manual draft).
+**Reason:** Transparency for the user — especially useful when Groq fallback is triggered. Also useful during development to verify which path the adapter took.
+**Status:** Final
+
+---
+
+## D022 — Tiered AI Model Routing
+**Decision:** Use different Gemini Flash model tiers depending on task complexity. All tiers fall back to Groq on failure.
+- **Tier 1 (lightweight):** `gemini-2.0-flash` — intent classification, clarification question generation
+- **Tier 2 (standard):** `gemini-2.5-flash` — (reserved) content restructuring, summarisation
+- **Tier 3 (premium):** `gemini-3.5-flash` — full draft generation, AI improve actions
+
+**Context continuity:** A `PipelineContext` object is built incrementally across all stages and passed in full to the premium model — no information loss between tiers.
+
+**Module structure:**
+- `src/ai/models.ts` — maps `TaskTier` → model name and URL
+- `src/ai/tasks/classifyIntent.ts` — Tier 1
+- `src/ai/tasks/generateClarification.ts` — Tier 1
+- `src/ai/tasks/generateDraft.ts` — Tier 3
+- `src/ai/adapter.ts` — orchestrates the pipeline via `classifyPipeline()`, `clarifyPipeline()`, `draftPipeline()`
+
+**Reason:** Better models have lower rate limits. Trivial tasks (classification, one-question generation) do not need premium intelligence. Reserving the premium quota for draft generation maximises output quality within API limits.
 **Status:** Final
