@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import type { LetterDraft, DocumentType } from '../types/document'
 
 // ─── Default Values ───────────────────────────────────────────────────────────
@@ -43,4 +44,13 @@ export const initialSessionState: SessionState = {
   uploadedContent: '',
   isGenerating: false,
   watermarkEnabled: DEFAULT_PDF_SETTINGS.watermarkEnabled,
+}
+
+// ─── Hook ─────────────────────────────────────────────────────────────────────
+
+export function useSessionStore() {
+  const [state, setState] = useState<SessionState>(initialSessionState)
+  const update = (partial: Partial<SessionState>) =>
+    setState(prev => ({ ...prev, ...partial }))
+  return { state, update }
 }

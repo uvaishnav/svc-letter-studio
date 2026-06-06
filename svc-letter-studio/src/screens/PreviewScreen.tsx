@@ -1,7 +1,7 @@
-// PreviewScreen — Phase 2
+// PreviewScreen — Phase 3
 // Single BlobProvider renders the PDF exactly ONCE.
 // Both the inline <object> preview and the download button share that blob.
-// No PDFDownloadLink — avoids double-render crash in @react-pdf/renderer v4.
+// No PDFDownloadLink — avoids double-render crash in @react-pdf/renderer v4 (D010).
 import { useState } from 'react'
 import { BlobProvider } from '@react-pdf/renderer'
 import type { Screen } from '../App'
@@ -18,11 +18,8 @@ export default function PreviewScreen({ navigate, state }: Props) {
 
   const doc = (
     <LetterheadDocument
-      content={state.draftContent}
-      watermarkEnabled={state.pdfSettings.watermarkEnabled}
-      signatoryName={state.signatoryName}
-      signatoryDesignation={state.signatoryDesignation}
-      showSignatory
+      draft={state.draft}
+      watermarkEnabled={state.watermarkEnabled}
     />
   )
 
@@ -31,7 +28,9 @@ export default function PreviewScreen({ navigate, state }: Props) {
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = 'svc-letter.pdf'
+    const docType = state.draft?.envelope?.documentType ?? 'letter'
+    const date = state.draft?.envelope?.date?.replace(/\s/g, '-') ?? 'draft'
+    a.download = `svc-${docType}-${date}.pdf`
     document.body.appendChild(a)
     a.click()
     document.body.removeChild(a)
@@ -81,7 +80,6 @@ export default function PreviewScreen({ navigate, state }: Props) {
           {/* Body */}
           <div className="flex-1 flex flex-col items-center px-4 pt-5 pb-8">
 
-            {/* Loading pill */}
             {loading && (
               <div
                 className="mb-4 text-xs px-5 py-2 rounded-full"
@@ -96,7 +94,6 @@ export default function PreviewScreen({ navigate, state }: Props) {
               </div>
             )}
 
-            {/* Error state */}
             {error && (
               <div
                 className="w-full max-w-sm rounded-2xl p-8 text-center"
@@ -115,10 +112,8 @@ export default function PreviewScreen({ navigate, state }: Props) {
               </div>
             )}
 
-            {/* Preview + download — shown on ALL devices once blob is ready */}
             {!error && url && blob && (
               <>
-                {/* Toggle + download row */}
                 <div className="flex items-center gap-3 mb-4">
                   <button
                     onClick={() => setShowPreview(v => !v)}
@@ -146,7 +141,6 @@ export default function PreviewScreen({ navigate, state }: Props) {
                   </button>
                 </div>
 
-                {/* PDF preview — works on both mobile and desktop */}
                 {showPreview && (
                   <div
                     className="w-full max-w-sm rounded-xl shadow-2xl overflow-hidden"
@@ -159,7 +153,6 @@ export default function PreviewScreen({ navigate, state }: Props) {
                       height="100%"
                       style={{ display: 'block', background: '#fff' }}
                     >
-                      {/* Fallback for browsers that block <object> PDF (some mobile) */}
                       <div
                         className="w-full h-full flex flex-col items-center justify-center gap-5 p-8"
                         style={{ background: 'var(--color-ivory)' }}
