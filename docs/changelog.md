@@ -1,5 +1,24 @@
 # Changelog
 
+## Session 12 — 2026-06-07
+
+### Fixed
+- `src/App.tsx` — Removed `isIntake` and `isUpload` from `hideNav`; bottom nav now visible on Intake, Upload, and all non-preview/non-draft screens
+- `src/App.tsx` — Removed `&& state.draft` guard on DraftScreen mount; `DraftScreen` now always renders and handles its own empty state (shows "No draft yet" message with back button)
+- `src/screens/IntakeScreen.tsx` — Added `← Back` button in header that navigates to `home`; button is hidden while AI pipeline is running to prevent mid-flight navigation
+
+### Navigation behaviour after fix
+| Screen | Bottom Nav | Back Button |
+|--------|-----------|-------------|
+| Home | ✅ | — |
+| Intake (Compose) | ✅ | ✅ ← Back (header) |
+| Upload | ✅ | ✅ ← Back (header, pre-existing) |
+| Draft | ❌ (focused edit mode) | ✅ ← Intake (top bar, pre-existing) |
+| Preview | ❌ (full-screen PDF) | ✅ ✏️ Edit (top bar, pre-existing) |
+| Settings | ✅ | — |
+
+---
+
 ## Session 11 — 2026-06-07
 
 ### Added
