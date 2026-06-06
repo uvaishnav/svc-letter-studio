@@ -3,7 +3,6 @@ import '../../pdf/fonts'
 import { DEFAULT_SIGNATORY, DEFAULT_PDF_SETTINGS } from '../../store/sessionStore'
 import type { LetterDraft } from '../../types/document'
 import LetterheadFirstPage from './LetterheadFirstPage'
-import LetterheadContinuationPage from './LetterheadContinuationPage'
 import Signatory from './Signatory'
 import Watermark from './Watermark'
 import BodyRenderer from './BodyRenderer'
@@ -68,23 +67,21 @@ const S = StyleSheet.create({
   },
 })
 
-// ─── Envelope height estimator ────────────────────────────────────────────────
-// Rough estimate so useCompactLayout knows how much first-page space the
-// envelope section consumes. Never scaled — only body content is scaled.
+// ─── Envelope height estimator ────────────────────────────────────────────
 function estimateEnvelopeHeight(envelope: LetterDraft['envelope']): number {
   let h = 0
-  if (envelope.date || envelope.refNumber) h += 22   // date/ref row
+  if (envelope.date || envelope.refNumber) h += 22
   if (envelope.recipient) {
-    h += 14  // "To," label
+    h += 14
     if (envelope.recipient.name)        h += 14
     if (envelope.recipient.designation) h += 14
     if (envelope.recipient.company)     h += 14
     if (envelope.recipient.address)     h += 14
-    h += 10  // recipientBlock marginBottom
+    h += 10
   }
   if (envelope.subject) {
     const lines = Math.ceil(envelope.subject.length / 70)
-    h += lines * 14 + 12   // subject rows + margins
+    h += lines * 14 + 12
   }
   h += 20  // divider + envelopeSection marginBottom
   return h
@@ -103,16 +100,11 @@ export default function LetterheadDocument({
   const blocks    = draft?.blocks ?? []
   const signatory = envelope?.signatory ?? DEFAULT_SIGNATORY
 
-  // ── Widow-page elimination ─────────────────────────────────────────────────
-  // Estimate how much space the envelope takes, then let useCompactLayout
-  // decide if a spacing scale < 1 is needed to avoid a near-empty last page.
-  // Header and Footer are NEVER affected — only inter-block spacing in BodyRenderer.
   const envelopeHeight = envelope ? estimateEnvelopeHeight(envelope) : 0
   const { spacingScale } = useCompactLayout(blocks, envelopeHeight)
 
   const envelopeSection = (
     <View style={S.envelopeSection}>
-      {/* Date + Ref row */}
       {(envelope?.date || envelope?.refNumber) && (
         <View style={S.dateRef}>
           {envelope?.date
@@ -123,8 +115,6 @@ export default function LetterheadDocument({
             : null}
         </View>
       )}
-
-      {/* Recipient block */}
       {envelope?.recipient && (
         <View style={S.recipientBlock}>
           <Text style={S.toLabel}>To,</Text>
@@ -134,16 +124,12 @@ export default function LetterheadDocument({
           {envelope.recipient.address     && <Text style={S.recipientLine}>{envelope.recipient.address}</Text>}
         </View>
       )}
-
-      {/* Subject line */}
       {envelope?.subject && (
         <View style={S.subjectLine}>
           <Text style={S.subjectLabel}>Sub:</Text>
           <Text style={S.subjectText}>{envelope.subject}</Text>
         </View>
       )}
-
-      {/* Divider before body */}
       {(envelope?.date || envelope?.recipient || envelope?.subject) && (
         <View style={S.divider} />
       )}
