@@ -26,12 +26,11 @@ export default function App() {
   const navigate = (s: Screen) => setScreen(s)
 
   const isPreview = screen === 'preview'
-  const isIntake  = screen === 'intake'
-  const isUpload  = screen === 'upload'
   const isDraft   = screen === 'draft'
 
   const rootBg  = isPreview ? '#1C1C1E' : '#F5F1E8'
-  const hideNav = isIntake || isUpload || isDraft || isPreview
+  // Only hide nav on preview (full-screen PDF view) and draft (focused editing)
+  const hideNav = isPreview || isDraft
 
   return (
     <div
@@ -71,7 +70,7 @@ export default function App() {
           <BlankScreen navigate={navigate} />
         )}
 
-        {screen === 'draft' && state.draft && (
+        {screen === 'draft' && (
           <DraftScreen
             navigate={navigate}
             state={state}
