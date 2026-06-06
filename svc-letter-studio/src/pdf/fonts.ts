@@ -1,48 +1,52 @@
-// Font registration for @react-pdf/renderer
-//
-// Fonts are self-hosted in /public/fonts/ to avoid CDN instability.
-// @react-pdf/renderer fetches fonts via XHR and only supports .ttf / .otf format.
-// We use window.location.origin to resolve correctly in dev and prod.
-//
-// REQUIRED FILES (see docs/FONTS.md for download instructions):
-//   public/fonts/PlayfairDisplaySC-Bold.ttf
-//   public/fonts/PlayfairDisplay-Regular.ttf
-//   public/fonts/PlayfairDisplay-Bold.ttf
+import { Font } from '@react-pdf/renderer';
+
+// ─── Font Registration ────────────────────────────────────────────────────────────
+// Files PRESENT in public/fonts/ (verified):
 //   public/fonts/Montserrat-Regular.ttf
+//   public/fonts/Montserrat-Italic.ttf
 //   public/fonts/Montserrat-SemiBold.ttf
 //   public/fonts/Montserrat-Bold.ttf
-//   public/fonts/Montserrat-Italic.ttf
+//   public/fonts/PlayfairDisplaySC-Bold.ttf
+//
+// Files NOT present (do not register):
+//   PlayfairDisplay-Regular.ttf
+//   PlayfairDisplay-Bold.ttf
 
-import { Font } from '@react-pdf/renderer'
+const base = window.location.origin;
 
-const base = typeof window !== 'undefined' ? window.location.origin : ''
-
-// Playfair Display SC — Small Caps variant, used for "SRI VAISHNAV"
-Font.register({
-  family: 'Playfair Display SC',
-  fonts: [
-    { src: `${base}/fonts/PlayfairDisplaySC-Bold.ttf`, fontWeight: 700 },
-  ],
-})
-
-// Playfair Display — regular/bold, kept as fallback
-Font.register({
-  family: 'Playfair Display',
-  fonts: [
-    { src: `${base}/fonts/PlayfairDisplay-Regular.ttf`, fontWeight: 400 },
-    { src: `${base}/fonts/PlayfairDisplay-Bold.ttf`,    fontWeight: 700 },
-  ],
-})
-
-// Montserrat — all supporting text
+// ─── Montserrat — multi-weight family ─────────────────────────────────────────
 Font.register({
   family: 'Montserrat',
   fonts: [
-    { src: `${base}/fonts/Montserrat-Regular.ttf`,  fontWeight: 400 },
+    { src: `${base}/fonts/Montserrat-Regular.ttf`,  fontWeight: 400, fontStyle: 'normal' },
     { src: `${base}/fonts/Montserrat-Italic.ttf`,   fontWeight: 400, fontStyle: 'italic' },
-    { src: `${base}/fonts/Montserrat-SemiBold.ttf`, fontWeight: 600 },
-    { src: `${base}/fonts/Montserrat-Bold.ttf`,     fontWeight: 700 },
+    { src: `${base}/fonts/Montserrat-SemiBold.ttf`, fontWeight: 600, fontStyle: 'normal' },
+    { src: `${base}/fonts/Montserrat-Bold.ttf`,     fontWeight: 700, fontStyle: 'normal' },
+    // fontWeight 800 has no dedicated file — map to Bold (700) as closest match
+    { src: `${base}/fonts/Montserrat-Bold.ttf`,     fontWeight: 800, fontStyle: 'normal' },
   ],
-})
+});
 
-Font.registerHyphenationCallback(word => [word])
+// ─── Montserrat-SemiBold — alias family (used via FONTS.bodySemiBold in brand.ts) ─────
+// Some components reference fontFamily: 'Montserrat-SemiBold' directly.
+// Register it as its own family so react-pdf never throws "not registered".
+Font.register({
+  family: 'Montserrat-SemiBold',
+  fonts: [
+    { src: `${base}/fonts/Montserrat-SemiBold.ttf`, fontWeight: 400, fontStyle: 'normal' },
+    { src: `${base}/fonts/Montserrat-SemiBold.ttf`, fontWeight: 600, fontStyle: 'normal' },
+    { src: `${base}/fonts/Montserrat-SemiBold.ttf`, fontWeight: 700, fontStyle: 'normal' },
+  ],
+});
+
+// ─── Playfair Display SC — brand wordmark only ───────────────────────────────
+Font.register({
+  family: 'Playfair Display SC',
+  fonts: [
+    { src: `${base}/fonts/PlayfairDisplaySC-Bold.ttf`, fontWeight: 700, fontStyle: 'normal' },
+  ],
+});
+
+// ─── Hyphenation ────────────────────────────────────────────────────────────
+// Disable auto-hyphenation for cleaner business document text.
+Font.registerHyphenationCallback(word => [word]);
