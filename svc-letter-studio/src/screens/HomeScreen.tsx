@@ -4,13 +4,6 @@ interface Props {
   navigate: (s: Screen) => void
 }
 
-const QUICK_TYPES = [
-  { label: 'Quotation',          emoji: '📋', hint: 'Price estimate for a project' },
-  { label: 'Work Order',         emoji: '🔨', hint: 'Instruction to begin work' },
-  { label: 'Invoice',            emoji: '🧾', hint: 'Bill for completed work' },
-  { label: 'Experience Letter',  emoji: '📄', hint: 'For outgoing employees' },
-]
-
 export default function HomeScreen({ navigate }: Props) {
   return (
     <div
@@ -58,48 +51,11 @@ export default function HomeScreen({ navigate }: Props) {
       </button>
 
       <p
-        className="text-center font-montserrat text-xs mt-3 mb-8"
+        className="text-center font-montserrat text-xs mt-3"
         style={{ color: 'var(--color-dark-brown)', opacity: 0.4 }}
       >
         Describe what you need — AI does the rest
       </p>
-
-      {/* ── Quick-type cards ──────────────────────────────────────────────── */}
-      <p
-        className="font-montserrat font-semibold text-xs uppercase tracking-widest mb-3"
-        style={{ color: 'var(--color-dark-brown)', opacity: 0.45 }}
-      >
-        Quick Start
-      </p>
-
-      <div className="grid grid-cols-2 gap-3">
-        {QUICK_TYPES.map(({ label, emoji, hint }) => (
-          <button
-            key={label}
-            onClick={() => navigate('intake')}
-            className="flex flex-col items-start p-4 rounded-2xl text-left"
-            style={{
-              background: '#fff',
-              border: '1.5px solid rgba(200,169,106,0.25)',
-              boxShadow: '0 2px 10px rgba(59,42,31,0.05)',
-            }}
-          >
-            <span className="text-xl mb-2">{emoji}</span>
-            <p
-              className="font-montserrat font-semibold text-sm"
-              style={{ color: 'var(--color-dark-brown)' }}
-            >
-              {label}
-            </p>
-            <p
-              className="font-montserrat text-xs mt-0.5"
-              style={{ color: 'var(--color-dark-brown)', opacity: 0.45 }}
-            >
-              {hint}
-            </p>
-          </button>
-        ))}
-      </div>
 
     </div>
   )
