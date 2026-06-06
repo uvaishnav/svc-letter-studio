@@ -28,7 +28,7 @@ export async function generateClarification(
     console.warn('[generateClarification] ⚠️ Gemini failed, trying Groq:', geminiErr);
     try {
       const groq = new GroqProvider();
-      raw = await groq.call(system, user, false) as string;
+      raw = await groq.call(system, user);
       console.log('[generateClarification] Groq raw:', raw);
     } catch (groqErr) {
       console.error('[generateClarification] ❌ Both providers failed:', groqErr);

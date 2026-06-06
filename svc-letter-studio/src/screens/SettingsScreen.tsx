@@ -4,7 +4,7 @@ interface Props {
   navigate: (s: Screen) => void
 }
 
-export default function SettingsScreen({ navigate }: Props) {
+export default function SettingsScreen({ navigate: _navigate }: Props) {
   return (
     <div className="flex flex-col min-h-full px-5 pt-12 pb-6"
          style={{ background: 'var(--color-ivory)' }}>

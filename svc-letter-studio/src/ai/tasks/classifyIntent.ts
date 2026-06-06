@@ -23,7 +23,7 @@ export async function classifyIntent(
     console.warn('[classifyIntent] ⚠️ Gemini failed, trying Groq:', geminiErr);
     try {
       const groq = new GroqProvider();
-      raw = await groq.call(system, user, false) as string;
+      raw = await groq.call(system, user);
       console.log('[classifyIntent] Groq raw response:', raw.slice(0, 300));
     } catch (groqErr) {
       console.error('[classifyIntent] ❌ Both providers failed:', groqErr);

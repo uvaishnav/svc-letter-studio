@@ -94,7 +94,7 @@ export default function App() {
       </div>
 
       {!hideNav && (
-        <BottomNav screen={screen} navigate={navigate} />
+        <BottomNav current={screen} navigate={navigate} />
       )}
     </div>
   )

@@ -3,10 +3,10 @@
 // Instead we install a minimal shim on globalThis that satisfies what
 // @react-pdf/renderer (pdfkit) needs: Buffer.from, Buffer.alloc, Buffer.isBuffer.
 ;(function installBufferShim() {
-  if (typeof globalThis.Buffer !== 'undefined') return
+  if (typeof (globalThis as any).Buffer !== 'undefined') return
   // Use the TextEncoder/Uint8Array-based approach
   const BufferShim = {
-    from(data: string | ArrayBuffer | number[], encoding?: string): Uint8Array {
+    from(data: string | ArrayBuffer | number[]): Uint8Array {
       if (typeof data === 'string') {
         const enc = new TextEncoder()
         return enc.encode(data)

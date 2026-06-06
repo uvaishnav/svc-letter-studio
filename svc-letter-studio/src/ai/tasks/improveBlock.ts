@@ -37,8 +37,8 @@ export async function improveBlock(input: ImproveBlockInput): Promise<ContentBlo
     console.warn('[improveBlock] Gemini failed, falling back to Groq:', geminiErr);
   }
 
-  // Groq fallback
+  // Groq fallback — call without returnDraft flag, returns plain string
   const groq    = new GroqProvider();
-  const rawText = await groq.call(system, user, true) as string;
+  const rawText = await groq.call(system, user);
   return parseBlock(rawText);
 }

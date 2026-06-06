@@ -14,7 +14,7 @@ export class GroqProvider implements AIProvider {
   }
 
   async generateDraft(input: AIInput): Promise<LetterDraft> {
-    return this.call(buildSystemPrompt(), buildUserPrompt(input));
+    return this.call(buildSystemPrompt(), buildUserPrompt(input), true);
   }
 
   // Generic text call — used by task modules as fallback
