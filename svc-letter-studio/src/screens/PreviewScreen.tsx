@@ -1,8 +1,65 @@
 import { usePDF } from '@react-pdf/renderer'
+import { useState } from 'react'
 import type { Screen } from '../App'
 import type { SessionState } from '../store/sessionStore'
 import LetterheadDocument from '../components/pdf/LetterheadDocument'
 import { createEmptyDraft } from '../store/sessionStore'
+
+// ── Helpers ────────────────────────────────────────────────────────────────
+
+/** True when the browser supports Web Share API with file sharing (iOS Safari 15.1+) */
+function canShareFiles(): boolean {
+  if (typeof navigator === 'undefined' || !navigator.share) return false
+  if (!navigator.canShare) return false
+  try {
+    return navigator.canShare({ files: [new File([''], 'test.pdf', { type: 'application/pdf' })] })
+  } catch {
+    return false
+  }
+}
+
+async function shareOrDownload(url: string, filename: string) {
+  if (canShareFiles()) {
+    try {
+      const res  = await fetch(url)
+      const blob = await res.blob()
+      const file = new File([blob], filename, { type: 'application/pdf' })
+      await navigator.share({ files: [file], title: filename })
+      return
+    } catch (err) {
+      // User cancelled or share failed — fall through to direct download
+      if ((err as DOMException).name === 'AbortError') return
+    }
+  }
+  // Fallback: anchor download
+  const a    = document.createElement('a')
+  a.href     = url
+  a.download = filename
+  a.click()
+}
+
+async function printPDF(url: string, filename: string) {
+  // On iOS: share sheet includes Print — reuse shareOrDownload
+  if (canShareFiles()) {
+    await shareOrDownload(url, filename)
+    return
+  }
+  // Desktop: open blob URL in hidden iframe and call print()
+  const iframe = document.createElement('iframe')
+  iframe.style.cssText = 'position:fixed;width:0;height:0;border:0;opacity:0'
+  iframe.src            = url
+  document.body.appendChild(iframe)
+  iframe.onload = () => {
+    try {
+      iframe.contentWindow?.focus()
+      iframe.contentWindow?.print()
+    } finally {
+      setTimeout(() => document.body.removeChild(iframe), 60_000)
+    }
+  }
+}
+
+// ── Sub-components ─────────────────────────────────────────────────────────
 
 function ProviderBadge({ provider }: { provider: SessionState['aiProvider'] }) {
   if (!provider) return null
@@ -21,13 +78,17 @@ function ProviderBadge({ provider }: { provider: SessionState['aiProvider'] }) {
   )
 }
 
+// ── Main Screen ────────────────────────────────────────────────────────────
+
 interface Props {
   navigate: (s: Screen) => void
-  state: SessionState
+  state:    SessionState
 }
 
 export default function PreviewScreen({ navigate, state }: Props) {
   const draft = state.draft ?? createEmptyDraft()
+  const [sharing, setSharing]  = useState(false)
+  const [printing, setPrinting] = useState(false)
 
   const [instance] = usePDF({
     document: <LetterheadDocument draft={draft} />,
@@ -37,16 +98,24 @@ export default function PreviewScreen({ navigate, state }: Props) {
   const dateStr  = new Date().toISOString().slice(0, 10)
   const filename = `SVC-${docType}-${dateStr}.pdf`
 
-  function handleDownload() {
+  const ready = !!instance.url && !instance.error && !instance.loading
+
+  async function handleShare() {
     if (!instance.url) return
-    const a = document.createElement('a')
-    a.href     = instance.url
-    a.download = filename
-    a.click()
+    setSharing(true)
+    try { await shareOrDownload(instance.url, filename) }
+    finally { setSharing(false) }
   }
 
-  // Decide where Back goes: if there's a draft, go to edit mode; otherwise intake
+  async function handlePrint() {
+    if (!instance.url) return
+    setPrinting(true)
+    try { await printPDF(instance.url, filename) }
+    finally { setPrinting(false) }
+  }
+
   const backTarget: Screen = state.draft ? 'draft' : 'intake'
+  const isIOS = canShareFiles()
 
   return (
     <div
@@ -55,34 +124,60 @@ export default function PreviewScreen({ navigate, state }: Props) {
     >
       {/* ── Top bar ── */}
       <div
-        className="flex items-center justify-between px-4 pt-12 pb-3"
+        className="flex items-center gap-2 px-4 pt-12 pb-3"
         style={{ background: '#1C1C1E' }}
       >
-        {/* Edit toggle */}
+        {/* Edit toggle — left */}
         <button
           onClick={() => navigate(backTarget)}
           className="font-montserrat text-sm font-bold px-3 py-2 rounded-xl"
           style={{
             background: 'rgba(200,169,106,0.15)',
-            color: '#C8A96A',
-            border: '1.5px solid rgba(200,169,106,0.4)',
+            color:      '#C8A96A',
+            border:     '1.5px solid rgba(200,169,106,0.4)',
+            flexShrink: 0,
           }}
         >
           ✏️ Edit
         </button>
 
-        <ProviderBadge provider={state.aiProvider} />
+        {/* Badge — centre (auto-fills remaining space) */}
+        <div className="flex-1 flex justify-center">
+          <ProviderBadge provider={state.aiProvider} />
+        </div>
 
+        {/* Print icon button — right of badge */}
         <button
-          onClick={handleDownload}
-          disabled={!instance.url || !!instance.error}
-          className="font-montserrat text-sm font-bold px-4 py-2 rounded-xl"
+          onClick={handlePrint}
+          disabled={!ready || printing}
+          title="Print"
+          className="font-montserrat text-sm font-bold px-3 py-2 rounded-xl"
           style={{
-            background: instance.url ? 'var(--color-gold)' : 'rgba(200,169,106,0.3)',
-            color: '#fff',
+            background: ready ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.04)',
+            color:      ready ? 'rgba(255,255,255,0.85)' : 'rgba(255,255,255,0.3)',
+            border:     '1.5px solid rgba(255,255,255,0.12)',
+            flexShrink: 0,
           }}
         >
-          {instance.loading ? 'Building…' : '⬇ Download'}
+          {printing ? '…' : '🖨️'}
+        </button>
+
+        {/* Share / Download — rightmost */}
+        <button
+          onClick={handleShare}
+          disabled={!ready || sharing}
+          className="font-montserrat text-sm font-bold px-4 py-2 rounded-xl"
+          style={{
+            background: ready ? 'var(--color-gold)' : 'rgba(200,169,106,0.3)',
+            color:      '#fff',
+            flexShrink: 0,
+          }}
+        >
+          {sharing
+            ? '…'
+            : instance.loading
+              ? 'Building…'
+              : isIOS ? '⬆ Share' : '⬇ Download'}
         </button>
       </div>
 
@@ -134,7 +229,9 @@ export default function PreviewScreen({ navigate, state }: Props) {
             className="text-center font-montserrat text-xs mt-3"
             style={{ color: 'rgba(255,255,255,0.3)' }}
           >
-            On iOS Safari? Use the Download button above to open the PDF.
+            {isIOS
+              ? 'Tap Share to AirDrop, save to Files, or print.'
+              : 'Use Download to save, or Print to send to your printer.'}
           </p>
         )}
       </div>
