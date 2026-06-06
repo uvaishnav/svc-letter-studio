@@ -1,15 +1,7 @@
 import { useState, useCallback } from 'react';
 import type { LetterDraft, ContentBlock, DocumentEnvelope } from '../types/document';
 import type { PipelineContext } from '../ai/types';
-
-export const DEFAULT_SIGNATORY = {
-  name:        'UPPALAPATI SUREKHA',
-  designation: 'Proprietor',
-};
-
-export const DEFAULT_PDF_SETTINGS = {
-  watermarkEnabled: true,
-};
+import { DEFAULT_SIGNATORY } from '../constants/defaults';
 
 export interface SessionState {
   draft:           LetterDraft | null;
@@ -36,7 +28,7 @@ export function createEmptyDraft(): LetterDraft {
       date: new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' }),
       refNumber: undefined,
       subject: '',
-      signatory: DEFAULT_SIGNATORY,
+      signatory: { ...DEFAULT_SIGNATORY },
     },
     blocks: [],
   };
