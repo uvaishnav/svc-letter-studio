@@ -35,12 +35,12 @@ export default function IntakeScreen({
   setRawInput,
   setPipelineCtx,
 }: Props) {
-  const [step, setStep]           = useState<IntakeStep>('input');
-  const [userText, setUserText]   = useState('');
-  const [question, setQuestion]   = useState<string | null>(null);
-  const [answer, setAnswer]       = useState('');;
-  const [error, setError]         = useState<string | null>(null);
-  const ctxRef                    = useRef<PipelineContext | null>(null);
+  const [step, setStep]         = useState<IntakeStep>('input');
+  const [userText, setUserText] = useState('');
+  const [question, setQuestion] = useState<string | null>(null);
+  const [answer, setAnswer]     = useState('');
+  const [error, setError]       = useState<string | null>(null);
+  const ctxRef                  = useRef<PipelineContext | null>(null);
 
   async function handleSubmitRequest() {
     const trimmed = userText.trim();
@@ -107,7 +107,7 @@ export default function IntakeScreen({
   const showClarification = step === 'input' && question !== null;
 
   return (
-    <div className="flex flex-col" style={{ background: 'var(--color-ivory)', minHeight: '100%' }}>
+    <div className="flex flex-col" style={{ background: 'var(--color-ivory)', paddingBottom: '96px' }}>
 
       {/* Header */}
       <div className="px-5 pt-8 pb-6">
@@ -182,9 +182,10 @@ export default function IntakeScreen({
 
         {/* Input */}
         {step === 'input' && (
-          <div className="flex flex-col gap-4" style={{ paddingBottom: '100px' }}>
+          <div className="flex flex-col gap-4">
             {!showClarification ? (
               <>
+                {/* Textarea card */}
                 <div
                   className="rounded-2xl p-4"
                   style={{
@@ -205,9 +206,25 @@ export default function IntakeScreen({
                     onChange={e => setUserText(e.target.value)}
                   />
                 </div>
+
+                {/* Generate button — sits right below the textarea */}
+                <button
+                  onClick={handleSubmitRequest}
+                  disabled={!userText.trim()}
+                  className="w-full py-4 rounded-2xl font-montserrat font-bold text-sm"
+                  style={{
+                    background: userText.trim() ? 'var(--color-dark-brown)' : 'rgba(59,42,31,0.15)',
+                    color: userText.trim() ? '#F5F1E8' : 'rgba(59,42,31,0.4)',
+                    border: 'none',
+                    transition: 'background 0.2s, color 0.2s',
+                  }}
+                >
+                  Generate Document →
+                </button>
               </>
             ) : (
               <>
+                {/* Detected document type badge */}
                 <div
                   className="rounded-xl px-4 py-3 flex items-start gap-3"
                   style={{ background: 'rgba(200,169,106,0.1)', border: '1px solid rgba(200,169,106,0.25)' }}
@@ -222,6 +239,8 @@ export default function IntakeScreen({
                     </p>
                   </div>
                 </div>
+
+                {/* Clarification question + answer textarea */}
                 <div
                   className="rounded-2xl p-4"
                   style={{
@@ -246,10 +265,26 @@ export default function IntakeScreen({
                     autoFocus
                   />
                 </div>
+
+                {/* Continue button — sits right below the answer textarea */}
+                <button
+                  onClick={handleSubmitAnswer}
+                  disabled={!answer.trim()}
+                  className="w-full py-4 rounded-2xl font-montserrat font-bold text-sm"
+                  style={{
+                    background: answer.trim() ? 'var(--color-dark-brown)' : 'rgba(59,42,31,0.15)',
+                    color: answer.trim() ? '#F5F1E8' : 'rgba(59,42,31,0.4)',
+                    border: 'none',
+                    transition: 'background 0.2s, color 0.2s',
+                  }}
+                >
+                  Continue →
+                </button>
+
                 <button
                   onClick={() => { setQuestion(null); setAnswer(''); }}
                   className="w-full py-2 font-montserrat text-sm"
-                  style={{ color: 'var(--color-dark-brown)', opacity: 0.5 }}
+                  style={{ color: 'var(--color-dark-brown)', opacity: 0.5, background: 'none', border: 'none' }}
                 >
                   ← Edit original request
                 </button>
@@ -258,40 +293,6 @@ export default function IntakeScreen({
           </div>
         )}
       </div>
-
-      {/* ── Sticky action bar — always visible above iOS keyboard ── */}
-      {step === 'input' && (
-        <div
-          style={{
-            position: 'fixed',
-            bottom: 0,
-            left: 0,
-            right: 0,
-            padding: '12px 20px',
-            paddingBottom: 'calc(12px + env(safe-area-inset-bottom))',
-            background: 'var(--color-ivory)',
-            borderTop: '1px solid rgba(200,169,106,0.25)',
-            zIndex: 50,
-          }}
-        >
-          <button
-            onClick={showClarification ? handleSubmitAnswer : handleSubmitRequest}
-            disabled={showClarification ? !answer.trim() : !userText.trim()}
-            className="w-full py-4 rounded-2xl font-montserrat font-bold text-sm"
-            style={{
-              background: (showClarification ? answer.trim() : userText.trim())
-                ? 'var(--color-dark-brown)'
-                : 'rgba(59,42,31,0.25)',
-              color: '#F5F1E8',
-              opacity: (showClarification ? answer.trim() : userText.trim()) ? 1 : 0.6,
-              transition: 'opacity 0.2s, background 0.2s',
-            }}
-          >
-            {showClarification ? 'Continue →' : 'Generate Document →'}
-          </button>
-        </div>
-      )}
-
     </div>
   );
 }
