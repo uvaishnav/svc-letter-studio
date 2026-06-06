@@ -15,7 +15,7 @@ export default function App() {
   const [screen, setScreen] = useState<Screen>('home')
 
   const {
-    draft,
+    state,
     setDraft,
     setRawInput,
     setPipelineCtx,
@@ -25,15 +25,12 @@ export default function App() {
 
   const navigate = (s: Screen) => setScreen(s)
 
-  const isPreview  = screen === 'preview'
-  const isIntake   = screen === 'intake'
-  const isUpload   = screen === 'upload'
-  const isDraft    = screen === 'draft'
+  const isPreview = screen === 'preview'
+  const isIntake  = screen === 'intake'
+  const isUpload  = screen === 'upload'
+  const isDraft   = screen === 'draft'
 
-  // Dark background only on preview
-  const rootBg = isPreview ? '#1C1C1E' : '#F5F1E8'
-
-  // Hide BottomNav on full-screen flow screens
+  const rootBg  = isPreview ? '#1C1C1E' : '#F5F1E8'
   const hideNav = isIntake || isUpload || isDraft || isPreview
 
   return (
@@ -46,6 +43,7 @@ export default function App() {
       }}
     >
       <div style={{ flex: 1, overflowY: 'auto' }}>
+
         {screen === 'home' && (
           <HomeScreen navigate={navigate} />
         )}
@@ -53,6 +51,7 @@ export default function App() {
         {screen === 'intake' && (
           <IntakeScreen
             navigate={navigate}
+            state={state}
             setDraft={setDraft}
             setRawInput={setRawInput}
             setPipelineCtx={setPipelineCtx}
@@ -72,25 +71,26 @@ export default function App() {
           <BlankScreen navigate={navigate} />
         )}
 
-        {screen === 'draft' && draft && (
+        {screen === 'draft' && state.draft && (
           <DraftScreen
-            draft={draft}
             navigate={navigate}
+            state={state}
             updateBlock={updateBlock}
             updateEnvelope={updateEnvelope}
           />
         )}
 
-        {screen === 'preview' && draft && (
+        {screen === 'preview' && (
           <PreviewScreen
-            draft={draft}
             navigate={navigate}
+            state={state}
           />
         )}
 
         {screen === 'settings' && (
           <SettingsScreen navigate={navigate} />
         )}
+
       </div>
 
       {!hideNav && (
