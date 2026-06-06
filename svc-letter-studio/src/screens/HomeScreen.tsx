@@ -24,7 +24,6 @@ export default function HomeScreen({ navigate }: Props) {
           className="mb-5"
           style={{ width: 80, height: 80, objectFit: 'contain' }}
           onError={e => {
-            // Fallback to PNG if SVG fails
             (e.currentTarget as HTMLImageElement).src = '/logo/logo.png';
           }}
         />
@@ -94,7 +93,7 @@ export default function HomeScreen({ navigate }: Props) {
               </p>
             </div>
             {/* Chevron */}
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style={{ opacity: 0.5, shrink: 0 }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style={{ opacity: 0.5, flexShrink: 0 }}>
               <path d="M9 18L15 12L9 6" stroke="#F5F1E8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </div>
@@ -136,7 +135,7 @@ export default function HomeScreen({ navigate }: Props) {
                 Paste a .docx or PDF — AI restructures it onto branded letterhead.
               </p>
             </div>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style={{ opacity: 0.35 }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style={{ opacity: 0.35, flexShrink: 0 }}>
               <path d="M9 18L15 12L9 6" stroke="#3B2A1F" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </div>
@@ -179,7 +178,7 @@ export default function HomeScreen({ navigate }: Props) {
                 Download an empty branded letterhead PDF instantly.
               </p>
             </div>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style={{ opacity: 0.35 }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style={{ opacity: 0.35, flexShrink: 0 }}>
               <path d="M9 18L15 12L9 6" stroke="#3B2A1F" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </div>
