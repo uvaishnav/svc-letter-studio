@@ -173,9 +173,23 @@
 ---
 
 ## D023 — Multi-page PDF Layout Strategy
-**Decision:** Use react-pdf's natural overflow flow for multi-page letters. Footer uses `fixed` + `render` prop to show on page 1 only. Signatory is flow-positioned (not absolute). `LetterheadContinuationPage` is reserved for future use if page 2 branding is needed.
-**Reason:**
-- `Footer` with bare `fixed` repeated on every auto-generated overflow page — unwanted on page 2+. The `render={({ pageNumber }) => pageNumber > 1 ? null : <.../>}` pattern conditionally hides it.
-- `Signatory` with `position:absolute` always anchored to page 1 bottom. For long letters whose content overflows, signatory must follow content to page 2. Flow layout achieves this.
-- `LetterheadContinuationPage` can be wired in future if page 2 needs a minimal top-bar / branding header.
-**Status:** Active — page 2 header/branding still an open issue for next session.
+**Decision:** Use `@react-pdf/renderer`’s natural single-page auto-overflow for multi-page letters. This is the correct and intended behaviour.
+
+**How it works:**
+- `LetterheadDocument` renders a single `<LetterheadFirstPage>` containing envelope + body blocks + signatory.
+- When content exceeds one page, `@react-pdf/renderer` auto-generates overflow pages. These pages are plain ivory — no header, no footer — which is acceptable and intentional.
+- `Footer` uses `fixed` + `render={({ pageNumber: pn }) => pn > 1 ? null : ...}` — renders only on page 1. ✅
+- `Signatory` is flow-positioned — follows content to whatever page it ends on. ✅
+- `Watermark` uses `fixed` — auto-repeats on all pages including overflow pages. ✅
+
+**`LetterheadContinuationPage` status:**
+- Exists as a future-use component (built session 1) for explicit branded continuation pages if ever required.
+- Currently imported but unused in `LetterheadDocument.tsx` (dead import — harmless).
+- If used in future: its fonts must be updated from PDFKit built-ins (`Helvetica-Bold`, `Helvetica`) to registered Montserrat/Playfair fonts.
+- Do NOT wire this unless explicitly decided — auto-overflow is sufficient.
+
+**`useCompactLayout` known inaccuracy (minor):**
+- `estimateTotalHeight()` applies `scale` to full `SIGNATORY_HEIGHT`, but in `Signatory.tsx` only `marginTop` actually scales. The box, name, and designation heights are fixed. This causes slight over-estimation of compaction needed.
+- Impossibility guard prevents wrong compression regardless, so this is non-critical.
+
+**Status:** Final
