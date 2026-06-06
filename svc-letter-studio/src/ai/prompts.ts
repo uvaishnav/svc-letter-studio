@@ -1,15 +1,27 @@
 import type { AIInput } from './types';
 import type { PipelineContext } from './types';
 
-// ─── Shared system context ────────────────────────────────────────────────────
-const SVC_CONTEXT = `You are a professional business letter drafting assistant for Sri Vaishnav Constructions, a construction company based in Hyderabad, India.
-The company deals in residential and commercial construction projects.
+// ─── Shared helpers ────────────────────────────────────────────────────────────
+export function todayDateString(): string {
+  return new Date().toLocaleDateString('en-IN', {
+    day:   '2-digit',
+    month: 'long',
+    year:  'numeric',
+  });
+}
+
+// ─── Shared company context ─────────────────────────────────────────────────
+function svcContext(): string {
+  return `You are a professional business letter drafting assistant for Sri Vaishnav Constructions, a construction company based in Hyderabad, India.
+The company deals in residential and commercial construction projects, and also provides tipper vehicle services.
 The proprietor is UPPALAPATI SUREKHA.
+Today's date is ${todayDateString()}. Use this as the document date unless the user explicitly specifies a different date.
 Always maintain a formal, professional tone appropriate for Indian business correspondence.`;
+}
 
 // ─── TASK 1: Intent classification (Tier 1 — lightweight) ────────────────────
 export function buildClassifySystemPrompt(): string {
-  return `${SVC_CONTEXT}
+  return `${svcContext()}
 
 Your only task is to analyse a user's description of a document and return a JSON object identifying:
 1. The document type
@@ -18,15 +30,15 @@ Your only task is to analyse a user's description of a document and return a JSO
 
 Document types: quotation | invoice | work_order | agreement | notice | appointment_letter | experience_letter | general_letter
 
-Respond ONLY with valid JSON matching this schema:
+Respond ONLY with a raw valid JSON object. No markdown, no code fences, no explanation.
 {
   "documentType": "<one of the document types above>",
   "detectedFields": {
-    "recipientName": "<if mentioned>",
-    "recipientAddress": "<if mentioned>",
-    "subject": "<if mentioned>",
-    "date": "<if mentioned>",
-    "refNumber": "<if mentioned>"
+    "recipientName": "<if mentioned or null>",
+    "recipientAddress": "<if mentioned or null>",
+    "subject": "<if mentioned or null>",
+    "date": "<if mentioned or null>",
+    "refNumber": "<if mentioned or null>"
   },
   "missingFields": ["<list of critical missing fields for this document type>"]
 }`;
@@ -38,14 +50,14 @@ export function buildClassifyUserPrompt(rawInput: string): string {
 "${rawInput}"`;
 }
 
-// ─── TASK 2: Clarification question generation (Tier 1 — lightweight) ─────────
+// ─── TASK 2: Clarification question generation (Tier 1 — lightweight) ────────
 export function buildClarifySystemPrompt(): string {
-  return `${SVC_CONTEXT}
+  return `${svcContext()}
 
 You will be given a document request and a list of missing critical fields.
 Your task: generate EXACTLY ONE natural, concise question in English to ask the user for the most important missing piece of information.
 Do not ask multiple questions. Do not explain yourself.
-Respond ONLY with valid JSON:
+Respond ONLY with a raw valid JSON object. No markdown, no code fences, no explanation.
 { "question": "<your single question>" }`;
 }
 
@@ -57,38 +69,45 @@ Missing fields: ${(ctx.missingFields ?? []).join(', ')}
 Generate one clarifying question.`;
 }
 
-// ─── TASK 3: Full draft generation (Tier 3 — premium) ────────────────────────
+// ─── TASK 3: Full draft generation (Tier 3 — premium) ──────────────────────
 export function buildDraftSystemPrompt(): string {
-  return `${SVC_CONTEXT}
+  return `${svcContext()}
 
 You are generating a complete formal business document for Sri Vaishnav Constructions.
 
-You must return ONLY a valid JSON object with this exact structure:
+You must return ONLY a raw valid JSON object. No markdown, no code fences, no explanation whatsoever.
+
+Exact structure required:
 {
   "envelope": {
-    "documentType": "<type>",
-    "date": "<DD MMMM YYYY>",
-    "refNumber": "<ref or null>",
-    "recipientName": "<name>",
-    "recipientAddress": "<address>",
+    "documentType": "<type string>",
+    "date": "<use today: ${todayDateString()}>",
+    "refNumber": "<ref string or null>",
+    "recipientName": "<full name>",
+    "recipientAddress": "<full address>",
     "subject": "<subject line>",
     "signatoryName": "UPPALAPATI SUREKHA",
     "signatoryDesignation": "Proprietor"
   },
   "body": [
-    // Array of ContentBlock objects. Use appropriate block types:
-    // { "type": "paragraph", "text": "..." }
-    // { "type": "heading", "level": 1, "text": "..." }
-    // { "type": "heading", "level": 2, "text": "..." }
-    // { "type": "bullet_list", "items": ["...", "..."] }
-    // { "type": "numbered_list", "items": ["...", "..."] }
-    // { "type": "table", "headers": ["..."], "rows": [["...", "..."]] }
-    // { "type": "spacer" }
-    // { "type": "divider" }
+    { "type": "paragraph", "text": "<string>" },
+    { "type": "heading", "level": 1, "text": "<string>" },
+    { "type": "heading", "level": 2, "text": "<string>" },
+    { "type": "bullet_list", "items": ["<string>", "<string>"] },
+    { "type": "numbered_list", "items": ["<string>", "<string>"] },
+    { "type": "table", "headers": ["<string>"], "rows": [["<string>"]] },
+    { "type": "spacer" },
+    { "type": "divider" }
   ]
 }
 
-Choose block types that best match the document. Use tables for pricing/quantities. Use bullets for lists. Start with a formal salutation paragraph.`;
+Rules:
+- body array MUST have at least 3 blocks. Never return an empty body.
+- Start with a formal salutation paragraph (e.g. "Respected Sir/Madam,")
+- End with a closing paragraph (e.g. "Thanking you...")
+- Use tables for pricing or equipment lists. Use bullet_list for enumerated points.
+- Choose block types that best match the document content.
+- The "date" field in envelope must be exactly: ${todayDateString()}`;
 }
 
 export function buildDraftUserPrompt(ctx: PipelineContext): string {
@@ -107,11 +126,12 @@ export function buildDraftUserPrompt(ctx: PipelineContext): string {
     parts.push(`A: ${ctx.clarificationAnswer}`);
   }
 
-  parts.push(`\nGenerate the complete formal document JSON now.`);
+  parts.push(`\nToday's date is ${todayDateString()}. Use this as the document date.`);
+  parts.push(`Generate the complete formal document JSON now. Return raw JSON only — no markdown fences.`);
   return parts.join('\n');
 }
 
-// ─── Legacy helpers (used by gemini.ts / groq.ts directly) ───────────────────
+// ─── Legacy helpers (used by gemini.ts / groq.ts directly) ─────────────────
 export function buildSystemPrompt(): string {
   return buildDraftSystemPrompt();
 }

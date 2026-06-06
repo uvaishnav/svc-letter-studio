@@ -23,6 +23,11 @@ export class GeminiProvider implements AIProvider {
     tier: import('./types').TaskTier = 'premium'
   ): Promise<string> {
     const url = `${geminiUrl(tier)}?key=${this.apiKey}`;
+
+    console.log(`[Gemini] ▶ call() tier=${tier}`);
+    console.log(`[Gemini] system prompt (${systemPrompt.length} chars):`, systemPrompt.slice(0, 300));
+    console.log(`[Gemini] user prompt (${userPrompt.length} chars):`, userPrompt.slice(0, 300));
+
     const body = {
       systemInstruction: { parts: [{ text: systemPrompt }] },
       contents: [{ role: 'user', parts: [{ text: userPrompt }] }],
@@ -41,11 +46,26 @@ export class GeminiProvider implements AIProvider {
 
     if (!res.ok) {
       const err = await res.text();
+      console.error(`[Gemini] ❌ HTTP ${res.status} for tier=${tier}:`, err);
       throw new Error(`Gemini ${tier} error: ${res.status} — ${err}`);
     }
 
     const json = await res.json();
-    return json.candidates?.[0]?.content?.parts?.[0]?.text ?? '{}';
+    const raw = json.candidates?.[0]?.content?.parts?.[0]?.text ?? '{}';
+
+    console.log(`[Gemini] ✅ raw response (${raw.length} chars):`, raw.slice(0, 500));
+
+    // Strip markdown code fences defensively (even though responseMimeType is set)
+    const cleaned = raw
+      .replace(/^```(?:json)?\s*/i, '')
+      .replace(/\s*```\s*$/, '')
+      .trim();
+
+    if (cleaned !== raw) {
+      console.warn('[Gemini] ⚠️ Markdown fences were present in response — stripped successfully');
+    }
+
+    return cleaned;
   }
 
   private async _call(
@@ -54,8 +74,13 @@ export class GeminiProvider implements AIProvider {
     tier: import('./types').TaskTier
   ): Promise<LetterDraft> {
     const raw = await this.call(systemPrompt, userPrompt, tier);
+    console.log('[Gemini._call] Attempting JSON.parse...');
     const parsed = JSON.parse(raw);
-    if (!parsed.envelope || !parsed.body) throw new Error('Invalid draft shape from Gemini');
+    if (!parsed.envelope || !parsed.body) {
+      console.error('[Gemini._call] ❌ Invalid draft shape. parsed =', parsed);
+      throw new Error('Invalid draft shape from Gemini');
+    }
+    console.log('[Gemini._call] ✅ Draft parsed. body blocks:', parsed.body?.length);
     return parsed as LetterDraft;
   }
 }
