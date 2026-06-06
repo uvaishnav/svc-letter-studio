@@ -1,16 +1,14 @@
 import { Font } from '@react-pdf/renderer';
 
 // ─── Font Registration ────────────────────────────────────────────────────────────
-// Files PRESENT in public/fonts/ (verified):
-//   public/fonts/Montserrat-Regular.ttf
-//   public/fonts/Montserrat-Italic.ttf
-//   public/fonts/Montserrat-SemiBold.ttf
-//   public/fonts/Montserrat-Bold.ttf
-//   public/fonts/PlayfairDisplaySC-Bold.ttf
-//
-// Files NOT present (do not register):
+// All 7 files confirmed present in public/fonts/:
+//   Montserrat-Regular.ttf
+//   Montserrat-Italic.ttf
+//   Montserrat-SemiBold.ttf
+//   Montserrat-Bold.ttf
 //   PlayfairDisplay-Regular.ttf
 //   PlayfairDisplay-Bold.ttf
+//   PlayfairDisplaySC-Bold.ttf
 
 const base = window.location.origin;
 
@@ -29,13 +27,22 @@ Font.register({
 
 // ─── Montserrat-SemiBold — alias family (used via FONTS.bodySemiBold in brand.ts) ─────
 // Some components reference fontFamily: 'Montserrat-SemiBold' directly.
-// Register it as its own family so react-pdf never throws "not registered".
+// Register as its own family so react-pdf never throws "not registered".
 Font.register({
   family: 'Montserrat-SemiBold',
   fonts: [
     { src: `${base}/fonts/Montserrat-SemiBold.ttf`, fontWeight: 400, fontStyle: 'normal' },
     { src: `${base}/fonts/Montserrat-SemiBold.ttf`, fontWeight: 600, fontStyle: 'normal' },
     { src: `${base}/fonts/Montserrat-SemiBold.ttf`, fontWeight: 700, fontStyle: 'normal' },
+  ],
+});
+
+// ─── Playfair Display — body serif (for formal document text if needed) ─────────
+Font.register({
+  family: 'Playfair Display',
+  fonts: [
+    { src: `${base}/fonts/PlayfairDisplay-Regular.ttf`, fontWeight: 400, fontStyle: 'normal' },
+    { src: `${base}/fonts/PlayfairDisplay-Bold.ttf`,    fontWeight: 700, fontStyle: 'normal' },
   ],
 });
 
