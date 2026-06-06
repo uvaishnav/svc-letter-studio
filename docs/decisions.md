@@ -119,3 +119,24 @@
 **Reason:** A rigid field schema would prevent the AI from choosing the best visual structure (tables, bullets, paragraphs) per document type. The block model gives the AI full compositional freedom while keeping envelope fields in deterministic positions on the letterhead.
 **Block types:** `paragraph`, `heading` (levels 1–2), `bullet_list`, `numbered_list`, `table`, `spacer`, `divider`.
 **Status:** Final
+
+---
+
+## D018 — AI Gemini Model Version
+**Decision:** Use `gemini-2.0-flash` model via REST API with `responseMimeType: application/json`.
+**Reason:** Flash variant is fast and cost-effective for structured generation. Native JSON mode eliminates need to strip markdown fences from output.
+**Status:** Final
+
+---
+
+## D019 — Groq Fallback Model
+**Decision:** Use `llama-3.3-70b-versatile` on Groq with `response_format: { type: 'json_object' }`.
+**Reason:** Strong instruction-following for structured JSON. Groq's inference speed makes it a viable real-time fallback.
+**Status:** Final
+
+---
+
+## D020 — Shared Prompt Layer
+**Decision:** `buildSystemPrompt()` and `buildUserPrompt()` in `src/ai/prompts.ts` are shared by both providers.
+**Reason:** Single source of truth for prompt logic. Changing tone, rules, or schema only requires editing one file.
+**Status:** Final

@@ -40,16 +40,24 @@
 - `src/screens/PreviewScreen.tsx` — wired to new `SessionState` shape; download filename uses doc type + date
 - `src/constants/brand.ts` — added `COLORS.text`, `COLORS.darkBrown`, `FONTS.bodySemiBold`
 
+### Phase 4 — AI Provider Abstraction ✅
+- `src/ai/types.ts` — `AIInput`, `AIOutput`, `AIProvider` interface
+- `src/ai/prompts.ts` — `buildSystemPrompt()`, `buildUserPrompt(input)` — shared across both providers
+- `src/ai/gemini.ts` — `GeminiProvider` using Gemini 2.0 Flash (`responseMimeType: application/json`)
+- `src/ai/groq.ts` — `GroqProvider` using `llama-3.3-70b-versatile` with `response_format: json_object`
+- `src/ai/adapter.ts` — `generateDraft(input)` — tries Gemini first, falls back to Groq on any error; re-exports `AIInput`, `AIOutput`
+- `.env.example` — documents required env vars
+
 ---
 
 ## Next Phase
 
-### Phase 4 — AI Provider Abstraction
-- Gemini Flash adapter
-- Groq fallback adapter
-- Common `generateDraft(input)` interface in `src/ai/adapter.ts`
-- Fallback routing logic
-- Environment variable wiring (`VITE_GEMINI_API_KEY`, `VITE_GROQ_API_KEY`)
+### Phase 5 — AI Intake and Clarification
+- Freeform intake screen (`IntakeScreen`) — textarea for user to describe the document
+- Intent detection — AI (or heuristic) identifies document type from text
+- One-question follow-up — if critical info is missing, ask exactly one clarifying question
+- On completion, calls `generateDraft()` from adapter and stores result in `sessionStore`
+- Transitions to PreviewScreen on success
 
 ---
 
@@ -84,3 +92,5 @@
 - Built Phase 3: document schema, ContentBlock union, LetterDraft, BodyRenderer, sessionStore update
 - Fixed: `brand.ts` missing `COLORS.text`, `COLORS.darkBrown`, `FONTS.bodySemiBold`
 - Wired `LetterheadDocument` and `PreviewScreen` to new `LetterDraft` shape
+- Built Phase 4: AI provider abstraction — types, prompts, Gemini adapter, Groq adapter, routing adapter
+- Added `.env.example`
