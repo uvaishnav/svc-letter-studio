@@ -122,6 +122,16 @@ export default function IntakeScreen({
 
       {/* ── Header ─────────────────────────────────────────────────────── */}
       <div className="px-5 pt-12 pb-6">
+        {/* Back button — hidden while AI is processing */}
+        {!isLoading && (
+          <button
+            onClick={() => navigate('home')}
+            className="font-montserrat text-sm font-medium mb-4 flex items-center gap-1"
+            style={{ color: 'var(--color-gold)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+          >
+            ← Back
+          </button>
+        )}
         <h1 className="font-montserrat font-bold text-2xl" style={{ color: 'var(--color-dark-brown)' }}>
           New Document
         </h1>
