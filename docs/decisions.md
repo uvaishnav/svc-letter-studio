@@ -123,8 +123,9 @@
 ---
 
 ## D018 — AI Gemini Model Version
-**Decision:** Use `gemini-2.0-flash` model via REST API with `responseMimeType: application/json`.
-**Reason:** Flash variant is fast and cost-effective for structured generation. Native JSON mode eliminates need to strip markdown fences from output.
+**Decision:** Use `gemini-3.5-flash` model via REST API with `responseMimeType: application/json`.
+**Supersedes:** Original decision to use `gemini-2.0-flash`.
+**Reason:** Gemini 3.5 Flash (released Google I/O 2026, May 19) delivers near-Pro intelligence at Flash speed. Key improvements: 65K output tokens (vs 8K in 2.0 Flash), better structured output adherence, stronger instruction-following. Free tier via Google AI Studio. One-line model name change.
 **Status:** Final
 
 ---
@@ -139,4 +140,11 @@
 ## D020 — Shared Prompt Layer
 **Decision:** `buildSystemPrompt()` and `buildUserPrompt()` in `src/ai/prompts.ts` are shared by both providers.
 **Reason:** Single source of truth for prompt logic. Changing tone, rules, or schema only requires editing one file.
+**Status:** Final
+
+---
+
+## D021 — AI Provider Visibility in UI
+**Decision:** Show a small badge in `PreviewScreen` indicating which AI provider generated the current draft (Gemini 3.5 Flash or Groq · Llama 3.3). Stored as `aiProvider: 'gemini' | 'groq' | null` in `SessionState`. Badge is hidden when `aiProvider` is null (e.g. empty/manual draft).
+**Reason:** Transparency for the user — especially useful when Groq fallback is triggered. Also useful during development to verify which path the adapter took.
 **Status:** Final
