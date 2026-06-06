@@ -29,6 +29,40 @@ const STAGE_MESSAGES: Record<string, string> = {
   generating:  'Drafting your document…',
 };
 
+// Reusable action button — two explicit visual states, no CSS variable ambiguity
+function ActionButton({
+  label,
+  onClick,
+  enabled,
+}: {
+  label: string;
+  onClick: () => void;
+  enabled: boolean;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={!enabled}
+      style={{
+        width: '100%',
+        padding: '16px',
+        borderRadius: '16px',
+        border: 'none',
+        fontFamily: 'Montserrat, sans-serif',
+        fontWeight: 700,
+        fontSize: '14px',
+        cursor: enabled ? 'pointer' : 'default',
+        transition: 'background 0.2s, color 0.2s',
+        // Active: espresso fill + ivory text. Disabled: light fill + muted text.
+        background: enabled ? '#3B2A1F' : 'rgba(59,42,31,0.12)',
+        color:      enabled ? '#F5F1E8' : 'rgba(59,42,31,0.35)',
+      }}
+    >
+      {label}
+    </button>
+  );
+}
+
 export default function IntakeScreen({
   navigate,
   setDraft,
@@ -107,29 +141,28 @@ export default function IntakeScreen({
   const showClarification = step === 'input' && question !== null;
 
   return (
-    <div className="flex flex-col" style={{ background: 'var(--color-ivory)', paddingBottom: '96px' }}>
+    <div className="flex flex-col" style={{ background: '#F5F1E8', paddingBottom: '96px' }}>
 
       {/* Header */}
       <div className="px-5 pt-8 pb-6">
         {!isLoading && (
           <button
             onClick={() => navigate('home')}
-            className="font-montserrat text-sm font-medium mb-4 flex items-center gap-1"
-            style={{ color: 'var(--color-gold)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+            style={{ color: '#C8A96A', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: 'Montserrat, sans-serif', fontSize: '14px', fontWeight: 500, marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '4px' }}
           >
             ← Back
           </button>
         )}
-        <h1 className="font-montserrat font-bold text-2xl" style={{ color: 'var(--color-dark-brown)' }}>
+        <h1 style={{ fontFamily: 'Montserrat, sans-serif', fontWeight: 700, fontSize: '24px', color: '#3B2A1F', margin: 0 }}>
           New Document
         </h1>
-        <p className="font-montserrat text-sm mt-1" style={{ color: 'var(--color-dark-brown)', opacity: 0.6 }}>
+        <p style={{ fontFamily: 'Montserrat, sans-serif', fontSize: '14px', color: '#3B2A1F', opacity: 0.6, marginTop: '4px', marginBottom: 0 }}>
           Describe what you need — the AI will handle the rest.
         </p>
       </div>
 
       {/* Gold divider */}
-      <div style={{ height: '1px', background: 'var(--color-gold)', margin: '0 20px 24px' }} />
+      <div style={{ height: '1px', background: '#C8A96A', margin: '0 20px 24px' }} />
 
       <div className="flex-1 px-5">
 
@@ -139,20 +172,23 @@ export default function IntakeScreen({
             <div className="relative">
               <div
                 className="w-16 h-16 rounded-full border-2 animate-spin"
-                style={{ borderColor: 'var(--color-gold)', borderTopColor: 'transparent' }}
+                style={{ borderColor: '#C8A96A', borderTopColor: 'transparent' }}
               />
               <div className="absolute inset-0 flex items-center justify-center">
-                <div className="w-2 h-2 rounded-full" style={{ background: 'var(--color-gold)' }} />
+                <div className="w-2 h-2 rounded-full" style={{ background: '#C8A96A' }} />
               </div>
             </div>
-            <p className="font-montserrat text-sm font-medium" style={{ color: 'var(--color-dark-brown)', opacity: 0.7 }}>
+            <p style={{ fontFamily: 'Montserrat, sans-serif', fontSize: '14px', fontWeight: 500, color: '#3B2A1F', opacity: 0.7 }}>
               {STAGE_MESSAGES[step] ?? 'Processing…'}
             </p>
             <div
-              className="px-3 py-1 rounded-full text-xs font-montserrat"
               style={{
+                padding: '4px 12px',
+                borderRadius: '999px',
+                fontSize: '12px',
+                fontFamily: 'Montserrat, sans-serif',
                 background: 'rgba(200,169,106,0.15)',
-                color: 'var(--color-gold)',
+                color: '#C8A96A',
                 border: '1px solid rgba(200,169,106,0.3)',
               }}
             >
@@ -167,13 +203,12 @@ export default function IntakeScreen({
             <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ background: 'rgba(200,80,80,0.12)' }}>
               <span className="text-2xl">⚠️</span>
             </div>
-            <p className="font-montserrat text-sm" style={{ color: 'var(--color-dark-brown)' }}>
+            <p style={{ fontFamily: 'Montserrat, sans-serif', fontSize: '14px', color: '#3B2A1F' }}>
               {error}
             </p>
             <button
               onClick={handleRetry}
-              className="mt-2 px-6 py-2 rounded-xl font-montserrat font-semibold text-sm"
-              style={{ background: 'var(--color-gold)', color: '#fff' }}
+              style={{ marginTop: '8px', padding: '8px 24px', borderRadius: '12px', fontFamily: 'Montserrat, sans-serif', fontWeight: 600, fontSize: '14px', background: '#C8A96A', color: '#fff', border: 'none', cursor: 'pointer' }}
             >
               Try Again
             </button>
@@ -182,24 +217,31 @@ export default function IntakeScreen({
 
         {/* Input */}
         {step === 'input' && (
-          <div className="flex flex-col gap-4">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             {!showClarification ? (
               <>
                 {/* Textarea card */}
                 <div
-                  className="rounded-2xl p-4"
                   style={{
                     background: '#fff',
                     border: '1.5px solid rgba(200,169,106,0.3)',
                     boxShadow: '0 2px 12px rgba(59,42,31,0.06)',
+                    borderRadius: '16px',
+                    padding: '16px',
                   }}
                 >
                   <textarea
-                    className="w-full resize-none font-montserrat outline-none bg-transparent"
                     style={{
-                      color: 'var(--color-dark-brown)',
+                      width: '100%',
+                      resize: 'none',
+                      fontFamily: 'Montserrat, sans-serif',
+                      outline: 'none',
+                      background: 'transparent',
+                      color: '#3B2A1F',
                       minHeight: '160px',
                       fontSize: '16px',
+                      border: 'none',
+                      boxSizing: 'border-box',
                     }}
                     placeholder="e.g. Write a quotation for painting work at Banjara Hills site for Mr. Rajesh Kumar — 3 rooms, ₹45,000 total."
                     value={userText}
@@ -207,34 +249,32 @@ export default function IntakeScreen({
                   />
                 </div>
 
-                {/* Generate button — sits right below the textarea */}
-                <button
+                <ActionButton
+                  label="Generate Document →"
                   onClick={handleSubmitRequest}
-                  disabled={!userText.trim()}
-                  className="w-full py-4 rounded-2xl font-montserrat font-bold text-sm"
-                  style={{
-                    background: userText.trim() ? 'var(--color-dark-brown)' : 'rgba(59,42,31,0.15)',
-                    color: userText.trim() ? '#F5F1E8' : 'rgba(59,42,31,0.4)',
-                    border: 'none',
-                    transition: 'background 0.2s, color 0.2s',
-                  }}
-                >
-                  Generate Document →
-                </button>
+                  enabled={!!userText.trim()}
+                />
               </>
             ) : (
               <>
                 {/* Detected document type badge */}
                 <div
-                  className="rounded-xl px-4 py-3 flex items-start gap-3"
-                  style={{ background: 'rgba(200,169,106,0.1)', border: '1px solid rgba(200,169,106,0.25)' }}
+                  style={{
+                    background: 'rgba(200,169,106,0.1)',
+                    border: '1px solid rgba(200,169,106,0.25)',
+                    borderRadius: '12px',
+                    padding: '12px 16px',
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    gap: '12px',
+                  }}
                 >
-                  <span className="text-base mt-0.5">📄</span>
+                  <span style={{ fontSize: '16px', marginTop: '2px' }}>📄</span>
                   <div>
-                    <p className="font-montserrat font-semibold text-xs uppercase tracking-wide" style={{ color: 'var(--color-gold)' }}>
+                    <p style={{ fontFamily: 'Montserrat, sans-serif', fontWeight: 600, fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.08em', color: '#C8A96A', margin: 0 }}>
                       Detected
                     </p>
-                    <p className="font-montserrat text-sm mt-0.5" style={{ color: 'var(--color-dark-brown)' }}>
+                    <p style={{ fontFamily: 'Montserrat, sans-serif', fontSize: '14px', color: '#3B2A1F', margin: '2px 0 0' }}>
                       {ctxRef.current?.documentType?.replace(/_/g, ' ') ?? 'Document'}
                     </p>
                   </div>
@@ -242,22 +282,29 @@ export default function IntakeScreen({
 
                 {/* Clarification question + answer textarea */}
                 <div
-                  className="rounded-2xl p-4"
                   style={{
                     background: '#fff',
                     border: '1.5px solid rgba(200,169,106,0.3)',
                     boxShadow: '0 2px 12px rgba(59,42,31,0.06)',
+                    borderRadius: '16px',
+                    padding: '16px',
                   }}
                 >
-                  <p className="font-montserrat font-semibold text-sm mb-3" style={{ color: 'var(--color-dark-brown)' }}>
+                  <p style={{ fontFamily: 'Montserrat, sans-serif', fontWeight: 600, fontSize: '14px', color: '#3B2A1F', marginBottom: '12px', marginTop: 0 }}>
                     {question}
                   </p>
                   <textarea
-                    className="w-full resize-none font-montserrat outline-none bg-transparent"
                     style={{
-                      color: 'var(--color-dark-brown)',
+                      width: '100%',
+                      resize: 'none',
+                      fontFamily: 'Montserrat, sans-serif',
+                      outline: 'none',
+                      background: 'transparent',
+                      color: '#3B2A1F',
                       minHeight: '80px',
                       fontSize: '16px',
+                      border: 'none',
+                      boxSizing: 'border-box',
                     }}
                     placeholder="Type your answer…"
                     value={answer}
@@ -266,25 +313,15 @@ export default function IntakeScreen({
                   />
                 </div>
 
-                {/* Continue button — sits right below the answer textarea */}
-                <button
+                <ActionButton
+                  label="Continue →"
                   onClick={handleSubmitAnswer}
-                  disabled={!answer.trim()}
-                  className="w-full py-4 rounded-2xl font-montserrat font-bold text-sm"
-                  style={{
-                    background: answer.trim() ? 'var(--color-dark-brown)' : 'rgba(59,42,31,0.15)',
-                    color: answer.trim() ? '#F5F1E8' : 'rgba(59,42,31,0.4)',
-                    border: 'none',
-                    transition: 'background 0.2s, color 0.2s',
-                  }}
-                >
-                  Continue →
-                </button>
+                  enabled={!!answer.trim()}
+                />
 
                 <button
                   onClick={() => { setQuestion(null); setAnswer(''); }}
-                  className="w-full py-2 font-montserrat text-sm"
-                  style={{ color: 'var(--color-dark-brown)', opacity: 0.5, background: 'none', border: 'none' }}
+                  style={{ width: '100%', padding: '8px', fontFamily: 'Montserrat, sans-serif', fontSize: '14px', color: '#3B2A1F', opacity: 0.5, background: 'none', border: 'none', cursor: 'pointer' }}
                 >
                   ← Edit original request
                 </button>
