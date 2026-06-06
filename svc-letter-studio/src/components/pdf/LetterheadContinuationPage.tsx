@@ -1,43 +1,38 @@
 import { Page, View, Text, StyleSheet } from '@react-pdf/renderer'
-import { COLORS, BRAND_NAME_PRIMARY } from '../../constants/brand'
-import Footer from './Footer'
+import { COLORS, FONTS } from '../../constants/brand'
 import Watermark from './Watermark'
 
-const styles = StyleSheet.create({
+// ─── Continuation page geometry (A4 = 841.89pt tall) ───────────────────────
+// No header or footer branding — clean blank page.
+// marginTop:  36pt — breathing room + staple clearance (matches side margins)
+// marginBot:  48pt — breathing room; page number sits inside this zone
+// marginLeft: 36pt
+// marginRight: 36pt
+// Available content height = 841.89 - 36 - 48 = 757.89pt
+// Available content width  = 595.28 - 36 - 36 = 523.28pt
+
+const CONT_CONTENT_MAX_HEIGHT = 757.89  // 841.89 - 36 - 48
+
+const S = StyleSheet.create({
   page: {
-    // No fontFamily here — components set their own using PDFKit built-ins.
     backgroundColor: COLORS.ivory,
   },
-  minimalTopBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 36,
-    paddingTop: 24,
-    paddingBottom: 10,
-  },
-  brandName: {
-    fontFamily: 'Helvetica-Bold',
-    fontSize: 11,
-    letterSpacing: 2,
-    color: COLORS.brown,
-  },
-  pageLabel: {
-    fontFamily: 'Helvetica',
-    fontSize: 7,
-    color: COLORS.brownMuted,
-    letterSpacing: 0.5,
-  },
-  thinGoldLine: {
-    height: 0.75,
-    backgroundColor: COLORS.gold,
-    marginHorizontal: 36,
-  },
   contentArea: {
-    flex: 1,
-    marginHorizontal: 36,
-    marginTop: 16,
-    marginBottom: 72,
+    maxHeight: CONT_CONTENT_MAX_HEIGHT,
+    marginLeft: 36,
+    marginRight: 36,
+    marginTop: 36,
+    marginBottom: 48,
+  },
+  // Page number — absolute, sits inside the 48pt bottom margin zone
+  pageNumber: {
+    position: 'absolute',
+    bottom: 18,
+    right: 36,
+    fontFamily: FONTS.body,
+    fontSize: 8,
+    color: COLORS.brownMuted,
+    letterSpacing: 0.3,
   },
 })
 
@@ -55,15 +50,12 @@ export default function LetterheadContinuationPage({
   children,
 }: Props) {
   return (
-    <Page size="A4" style={styles.page}>
-      <View style={styles.minimalTopBar}>
-        <Text style={styles.brandName}>{BRAND_NAME_PRIMARY}</Text>
-        <Text style={styles.pageLabel}>Page {pageNumber} of {totalPages}</Text>
-      </View>
-      <View style={styles.thinGoldLine} />
+    <Page size="A4" style={S.page}>
       {watermarkEnabled && <Watermark />}
-      <View style={styles.contentArea}>{children}</View>
-      <Footer showPageNumber pageNumber={pageNumber} totalPages={totalPages} />
+      <View style={S.contentArea}>
+        {children}
+      </View>
+      <Text style={S.pageNumber}>{pageNumber} / {totalPages}</Text>
     </Page>
   )
 }
