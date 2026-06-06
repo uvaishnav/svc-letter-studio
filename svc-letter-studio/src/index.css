@@ -12,6 +12,10 @@
 
   --font-brand: 'Cormorant Garamond', Georgia, serif;
   --font-body: 'Montserrat', system-ui, sans-serif;
+
+  /* Safe area inset as CSS var for reuse */
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 * {
@@ -26,13 +30,17 @@ html, body, #root {
   background-color: var(--color-ivory);
   font-family: var(--font-body);
   color: var(--color-brown);
-  /* Prevent text size adjustment on orientation change */
   -webkit-text-size-adjust: 100%;
 }
 
-/* Safe area insets for iPhone notch/home bar */
-.safe-top    { padding-top: env(safe-area-inset-top); }
-.safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
+/* Safe area helpers */
+.safe-top    { padding-top: env(safe-area-inset-top, 0px); }
+.safe-bottom { padding-bottom: env(safe-area-inset-bottom, 0px); }
+
+/* Prevent iOS auto-zoom on any input/textarea — keep font-size >= 16px */
+input, textarea, select {
+  font-size: 16px !important;
+}
 
 /* Scrollbar hidden for mobile feel */
 ::-webkit-scrollbar { display: none; }

@@ -9,11 +9,11 @@ import {
 } from '../ai/adapter';
 
 type IntakeStep =
-  | 'input'          // user types their request
-  | 'classifying'    // Tier 1: detecting intent
-  | 'clarifying'     // Tier 1: asking one question
-  | 'generating'     // Tier 3: building the draft
-  | 'error';         // something went wrong
+  | 'input'
+  | 'classifying'
+  | 'clarifying'
+  | 'generating'
+  | 'error';
 
 interface Props {
   navigate: (s: Screen) => void;
@@ -23,7 +23,6 @@ interface Props {
   setPipelineCtx: (ctx: PipelineContext) => void;
 }
 
-// Status messages shown during each pipeline stage
 const STAGE_MESSAGES: Record<string, string> = {
   classifying: 'Understanding your request…',
   clarifying:  'Analysing document requirements…',
@@ -43,31 +42,24 @@ export default function IntakeScreen({
   const [error, setError]         = useState<string | null>(null);
   const ctxRef                    = useRef<PipelineContext | null>(null);
 
-  // ── Stage 1: user submits initial request ──────────────────────────────────
   async function handleSubmitRequest() {
     const trimmed = userText.trim();
     if (!trimmed) return;
-
     setRawInput(trimmed);
     setStep('classifying');
     setError(null);
-
     try {
       const ctx = await classifyPipeline(trimmed);
       ctxRef.current = ctx;
       setPipelineCtx(ctx);
-
       setStep('clarifying');
       const { ctx: updatedCtx, question: q } = await clarifyPipeline(ctx);
       ctxRef.current = updatedCtx;
       setPipelineCtx(updatedCtx);
-
       if (q) {
-        // Need one more piece of info from user
         setQuestion(q);
-        setStep('input'); // back to input, but now showing clarification UI
+        setStep('input');
       } else {
-        // All info present — proceed straight to generation
         await runGeneration(updatedCtx);
       }
     } catch (err) {
@@ -77,11 +69,9 @@ export default function IntakeScreen({
     }
   }
 
-  // ── Stage 2: user answers the clarification question ──────────────────────
   async function handleSubmitAnswer() {
     const trimmedAnswer = answer.trim();
     if (!trimmedAnswer || !ctxRef.current) return;
-
     const enrichedCtx: PipelineContext = {
       ...ctxRef.current,
       clarificationAnswer: trimmedAnswer,
@@ -92,7 +82,6 @@ export default function IntakeScreen({
     await runGeneration(enrichedCtx);
   }
 
-  // ── Stage 3: generate the full draft ──────────────────────────────────────
   async function runGeneration(ctx: PipelineContext) {
     setStep('generating');
     try {
@@ -118,11 +107,11 @@ export default function IntakeScreen({
   const showClarification = step === 'input' && question !== null;
 
   return (
-    <div className="flex flex-col min-h-screen" style={{ background: 'var(--color-ivory)', paddingBottom: '80px' }}>
+    // pb-24 gives clearance above the bottom nav
+    <div className="flex flex-col" style={{ background: 'var(--color-ivory)', paddingBottom: '96px' }}>
 
-      {/* ── Header ─────────────────────────────────────────────────────── */}
-      <div className="px-5 pt-12 pb-6">
-        {/* Back button — hidden while AI is processing */}
+      {/* Header */}
+      <div className="px-5 pt-8 pb-6">
         {!isLoading && (
           <button
             onClick={() => navigate('home')}
@@ -140,31 +129,26 @@ export default function IntakeScreen({
         </p>
       </div>
 
-      {/* ── Gold divider ───────────────────────────────────────────────── */}
+      {/* Gold divider */}
       <div style={{ height: '1px', background: 'var(--color-gold)', margin: '0 20px 24px' }} />
 
       <div className="flex-1 px-5">
 
-        {/* ── Loading State ─────────────────────────────────────────────── */}
+        {/* Loading */}
         {isLoading && (
           <div className="flex flex-col items-center justify-center pt-20 gap-6">
             <div className="relative">
-              {/* Spinner ring */}
               <div
                 className="w-16 h-16 rounded-full border-2 animate-spin"
                 style={{ borderColor: 'var(--color-gold)', borderTopColor: 'transparent' }}
               />
-              {/* Inner dot */}
-              <div
-                className="absolute inset-0 flex items-center justify-center"
-              >
+              <div className="absolute inset-0 flex items-center justify-center">
                 <div className="w-2 h-2 rounded-full" style={{ background: 'var(--color-gold)' }} />
               </div>
             </div>
             <p className="font-montserrat text-sm font-medium" style={{ color: 'var(--color-dark-brown)', opacity: 0.7 }}>
               {STAGE_MESSAGES[step] ?? 'Processing…'}
             </p>
-            {/* Tier badge */}
             <div
               className="px-3 py-1 rounded-full text-xs font-montserrat"
               style={{
@@ -178,7 +162,7 @@ export default function IntakeScreen({
           </div>
         )}
 
-        {/* ── Error State ───────────────────────────────────────────────── */}
+        {/* Error */}
         {step === 'error' && (
           <div className="flex flex-col items-center justify-center pt-16 gap-4 text-center">
             <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ background: 'rgba(200,80,80,0.12)' }}>
@@ -197,12 +181,10 @@ export default function IntakeScreen({
           </div>
         )}
 
-        {/* ── Main Input (initial or clarification) ─────────────────────── */}
+        {/* Input */}
         {step === 'input' && (
           <div className="flex flex-col gap-4">
-
             {!showClarification ? (
-              /* Initial freeform request */
               <>
                 <div
                   className="rounded-2xl p-4"
@@ -213,18 +195,20 @@ export default function IntakeScreen({
                   }}
                 >
                   <textarea
-                    className="w-full resize-none font-montserrat text-sm outline-none bg-transparent"
-                    style={{ color: 'var(--color-dark-brown)', minHeight: '160px' }}
+                    className="w-full resize-none font-montserrat outline-none bg-transparent"
+                    style={{
+                      color: 'var(--color-dark-brown)',
+                      minHeight: '160px',
+                      fontSize: '16px', // prevents iOS auto-zoom
+                    }}
                     placeholder="e.g. Write a quotation for painting work at Banjara Hills site for Mr. Rajesh Kumar — 3 rooms, ₹45,000 total."
                     value={userText}
                     onChange={e => setUserText(e.target.value)}
                     onKeyDown={e => {
                       if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) handleSubmitRequest();
                     }}
-                    autoFocus
                   />
                 </div>
-
                 <button
                   onClick={handleSubmitRequest}
                   disabled={!userText.trim()}
@@ -237,15 +221,12 @@ export default function IntakeScreen({
                 >
                   Generate Document →
                 </button>
-
                 <p className="text-center font-montserrat text-xs" style={{ color: 'var(--color-dark-brown)', opacity: 0.4 }}>
                   ⌘ + Enter to submit
                 </p>
               </>
             ) : (
-              /* Clarification follow-up */
               <>
-                {/* Context pill showing what was detected */}
                 <div
                   className="rounded-xl px-4 py-3 flex items-start gap-3"
                   style={{ background: 'rgba(200,169,106,0.1)', border: '1px solid rgba(200,169,106,0.25)' }}
@@ -260,8 +241,6 @@ export default function IntakeScreen({
                     </p>
                   </div>
                 </div>
-
-                {/* The clarification question */}
                 <div
                   className="rounded-2xl p-4"
                   style={{
@@ -274,8 +253,12 @@ export default function IntakeScreen({
                     {question}
                   </p>
                   <textarea
-                    className="w-full resize-none font-montserrat text-sm outline-none bg-transparent"
-                    style={{ color: 'var(--color-dark-brown)', minHeight: '80px' }}
+                    className="w-full resize-none font-montserrat outline-none bg-transparent"
+                    style={{
+                      color: 'var(--color-dark-brown)',
+                      minHeight: '80px',
+                      fontSize: '16px', // prevents iOS auto-zoom
+                    }}
                     placeholder="Type your answer…"
                     value={answer}
                     onChange={e => setAnswer(e.target.value)}
@@ -285,7 +268,6 @@ export default function IntakeScreen({
                     autoFocus
                   />
                 </div>
-
                 <button
                   onClick={handleSubmitAnswer}
                   disabled={!answer.trim()}
@@ -298,7 +280,6 @@ export default function IntakeScreen({
                 >
                   Continue →
                 </button>
-
                 <button
                   onClick={() => { setQuestion(null); setAnswer(''); }}
                   className="w-full py-2 font-montserrat text-sm"

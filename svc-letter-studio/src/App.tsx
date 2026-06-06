@@ -35,13 +35,16 @@ export default function App() {
   return (
     <div
       style={{
-        minHeight: '100dvh',
+        height: '100dvh',
         background: rootBg,
         display: 'flex',
         flexDirection: 'column',
+        // Push content below the iPhone status bar
+        paddingTop: 'env(safe-area-inset-top, 0px)',
       }}
     >
-      <div style={{ flex: 1, overflowY: 'auto' }}>
+      {/* Scrollable screen content */}
+      <div style={{ flex: 1, overflowY: 'auto', minHeight: 0 }}>
 
         {screen === 'home' && (
           <HomeScreen navigate={navigate} />
@@ -92,6 +95,7 @@ export default function App() {
 
       </div>
 
+      {/* BottomNav is always outside the scroll container — always visible */}
       {!hideNav && (
         <BottomNav current={screen} navigate={navigate} />
       )}
