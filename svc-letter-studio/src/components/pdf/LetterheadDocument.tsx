@@ -2,7 +2,7 @@ import { Document, View, Text, StyleSheet } from '@react-pdf/renderer'
 import '../../pdf/fonts'
 import { DEFAULT_SIGNATORY, DEFAULT_PDF_SETTINGS } from '../../store/sessionStore'
 import type { LetterDraft } from '../../types/document'
-import { partitionBlocks } from '../../pdf/partitionBlocks'
+import { partitionDebug } from '../../pdf/partitionBlocks'
 import LetterheadFirstPage from './LetterheadFirstPage'
 import LetterheadContinuationPage from './LetterheadContinuationPage'
 import Signatory from './Signatory'
@@ -68,23 +68,22 @@ const S = StyleSheet.create({
 })
 
 // ─── Envelope height estimator ─────────────────────────────────────────────────
-// Must stay in sync with the actual rendered envelope section below.
 function estimateEnvelopeHeight(envelope: LetterDraft['envelope']): number {
   let h = 0
-  if (envelope.date || envelope.refNumber) h += 22      // dateRef row
+  if (envelope.date || envelope.refNumber) h += 22
   if (envelope.recipient) {
-    h += 14                                              // "To," label
+    h += 14
     if (envelope.recipient.name)        h += 14
     if (envelope.recipient.designation) h += 14
     if (envelope.recipient.company)     h += 14
     if (envelope.recipient.address)     h += 14
-    h += 10                                              // recipientBlock marginBottom
+    h += 10
   }
   if (envelope.subject) {
     const lines = Math.ceil(envelope.subject.length / 70)
-    h += lines * 14 + 12                                 // subjectLine
+    h += lines * 14 + 12
   }
-  h += 20  // divider (0.5) + envelopeSection marginBottom(10) + divider marginBottom(10)
+  h += 20
   return h
 }
 
@@ -101,10 +100,11 @@ export default function LetterheadDocument({
   const blocks    = draft?.blocks ?? []
   const signatory = envelope?.signatory ?? DEFAULT_SIGNATORY
 
-  // Partition blocks across pages with orphan/widow control.
-  // spacingScale is always 1.0 — we never compress spacing.
   const envelopeHeight = envelope ? estimateEnvelopeHeight(envelope) : 0
-  const { page1, continuations, totalPages } = partitionBlocks(blocks, envelopeHeight)
+
+  // ⚠️  DEBUG MODE — logs partition decisions to browser console.
+  // Switch back to partitionBlocks() once pagination looks correct.
+  const { page1, continuations, totalPages } = partitionDebug(blocks, envelopeHeight)
 
   const envelopeSection = (
     <View style={S.envelopeSection}>
@@ -159,7 +159,7 @@ export default function LetterheadDocument({
 
       {/* ── Continuation pages ── */}
       {continuations.map((pageBlocks, idx) => {
-        const pageNumber = idx + 2  // page 1 is first page
+        const pageNumber = idx + 2
         const isLast = isLastPage(pageNumber - 1)
         return (
           <LetterheadContinuationPage
