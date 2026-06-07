@@ -210,18 +210,28 @@ export default function PreviewScreen({ navigate, state }: Props) {
           </div>
         )}
 
+        {/* Outer div scrolls on mobile; iframe is tall enough to show all pages */}
         {instance.url && !instance.error && (
-          <iframe
-            src={instance.url}
-            title="Letter Preview"
+          <div
             style={{
-              width:        '100%',
-              height:       'calc(100dvh - 100px)',
-              border:       'none',
-              borderRadius: '12px',
-              background:   '#fff',
+              overflowY:                'auto',
+              WebkitOverflowScrolling:  'touch',
+              borderRadius:             '12px',
             }}
-          />
+          >
+            <iframe
+              src={instance.url}
+              title="Letter Preview"
+              style={{
+                width:        '100%',
+                height:       '1684px', // ~2 A4 pages (842px each) — scroll reveals page 2
+                border:       'none',
+                borderRadius: '12px',
+                background:   '#fff',
+                display:      'block',
+              }}
+            />
+          </div>
         )}
 
         {instance.url && !instance.error && (
