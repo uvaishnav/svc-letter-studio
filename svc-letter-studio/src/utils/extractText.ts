@@ -3,11 +3,12 @@
  * Extracts raw text from .docx (mammoth) or text-based .pdf (pdfjs-dist).
  * Returns { text, warning? } — warning is set when extraction quality is poor.
  *
- * NOTE: pdfjs GlobalWorkerOptions.workerSrc is set to a CDN URL pinned to the
- * EXACT same version as the installed pdfjs-dist package (6.0.227).
- * The API version and Worker version MUST match, otherwise pdfjs throws
- * "The API version does not match the Worker version".
- * Using a CDN URL avoids iOS Safari's lack of ES module Worker support.
+ * iOS Safari compatibility notes:
+ * - file.arrayBuffer() triggers a ReadableStream async iteration path inside
+ *   pdfjs-dist v6 that crashes on iOS Safari 16 and below.
+ * - FileReader.readAsArrayBuffer() is the older, fully supported API on all
+ *   iOS versions and avoids ReadableStream entirely.
+ * - pdfjs CDN worker is pinned to exact version 6.0.227 (matches package.json).
  */
 
 export interface ExtractionResult {
@@ -15,10 +16,21 @@ export interface ExtractionResult {
   warning?: string;
 }
 
+// ─── iOS-safe file reader ───────────────────────────────────────────────────────
+// Uses FileReader instead of file.arrayBuffer() — works on all iOS versions.
+function readFileAsArrayBuffer(file: File): Promise<ArrayBuffer> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload  = () => resolve(reader.result as ArrayBuffer);
+    reader.onerror = () => reject(new Error('Failed to read file.'));
+    reader.readAsArrayBuffer(file);
+  });
+}
+
 // ─── .docx via mammoth ────────────────────────────────────────────────────────
 async function extractDocx(file: File): Promise<ExtractionResult> {
   const mammoth = await import('mammoth');
-  const arrayBuffer = await file.arrayBuffer();
+  const arrayBuffer = await readFileAsArrayBuffer(file);
   const result = await mammoth.extractRawText({ arrayBuffer });
   const text = result.value.trim();
   if (!text) {
@@ -34,18 +46,21 @@ async function extractDocx(file: File): Promise<ExtractionResult> {
 async function extractPdf(file: File): Promise<ExtractionResult> {
   const pdfjsLib = await import('pdfjs-dist');
 
-  // Pin CDN worker to EXACT installed version (pdfjs-dist@6.0.227 in package.json).
-  // Major.minor.patch must all match — pdfjs enforces strict version equality
-  // between the API bundle and the worker script.
+  // CDN worker pinned to exact installed version — pdfjs enforces strict match.
   pdfjsLib.GlobalWorkerOptions.workerSrc =
     'https://cdn.jsdelivr.net/npm/pdfjs-dist@6.0.227/build/pdf.worker.min.mjs';
 
-  const arrayBuffer = await file.arrayBuffer();
-  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+  // Use FileReader instead of file.arrayBuffer() to avoid ReadableStream
+  // async iteration which crashes on iOS Safari 16 and below.
+  const arrayBuffer = await readFileAsArrayBuffer(file);
+
+  // Pass as Uint8Array — pdfjs takes ownership without any stream wrapping.
+  const data = new Uint8Array(arrayBuffer);
+  const pdf  = await pdfjsLib.getDocument({ data }).promise;
 
   const pageTexts: string[] = [];
   for (let i = 1; i <= pdf.numPages; i++) {
-    const page = await pdf.getPage(i);
+    const page    = await pdf.getPage(i);
     const content = await page.getTextContent();
     const pageText = content.items
       .map((item: any) => ('str' in item ? item.str : ''))
