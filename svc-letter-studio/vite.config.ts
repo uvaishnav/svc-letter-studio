@@ -47,6 +47,47 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+        // navigateFallback only applies to HTML navigation requests.
+        // Deny asset paths so the SW never returns index.html for a .js/.css request
+        // (WebKit/Safari rejects any JS served as text/html).
+        navigateFallback: 'index.html',
+        navigateFallbackDenylist: [
+          /^\/assets\//,   // Vite build output chunks
+          /\.js$/,
+          /\.css$/,
+          /\.png$/,
+          /\.svg$/,
+          /\.ico$/,
+          /\.woff2$/,
+          /\.webmanifest$/,
+        ],
+        runtimeCaching: [
+          {
+            // JS and CSS assets — network first so fresh deploys propagate,
+            // fall back to cache when offline.
+            urlPattern: /\.(?:js|css)$/i,
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'static-assets',
+              expiration: {
+                maxEntries: 60,
+                maxAgeSeconds: 60 * 60 * 24 * 7, // 7 days
+              },
+            },
+          },
+          {
+            // Fonts and images — cache first (rarely change).
+            urlPattern: /\.(?:png|svg|ico|woff2)$/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'static-media',
+              expiration: {
+                maxEntries: 30,
+                maxAgeSeconds: 60 * 60 * 24 * 30, // 30 days
+              },
+            },
+          },
+        ],
       },
     }),
   ],
