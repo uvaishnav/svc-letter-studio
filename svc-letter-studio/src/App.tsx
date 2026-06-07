@@ -34,19 +34,16 @@ export default function App() {
   return (
     <div
       style={{
-        // Use 100dvh so the root exactly matches the visual viewport on iOS Safari/PWA.
-        // Do NOT add paddingTop here — each screen handles its own safe-area-inset-top
-        // so we avoid double-counting the status bar height.
         height: '100dvh',
         background: rootBg,
         display: 'flex',
         flexDirection: 'column',
-        // Reserve the home-indicator strip at the bottom so the nav truly hugs the edge.
-        paddingBottom: 'env(safe-area-inset-bottom, 0px)',
-        boxSizing: 'border-box',
+        // App.tsx owns the top safe-area — pushes ALL screens below the status bar.
+        // Each screen must NOT add env(safe-area-inset-top) again.
+        paddingTop: 'env(safe-area-inset-top, 0px)',
       }}
     >
-      {/* Scrollable screen content — takes all remaining space above the nav */}
+      {/* Scrollable screen content */}
       <div style={{ flex: 1, overflowY: 'auto', minHeight: 0 }}>
 
         {screen === 'home' && (
@@ -98,7 +95,7 @@ export default function App() {
 
       </div>
 
-      {/* BottomNav sits outside the scroll area — always pinned to bottom of root */}
+      {/* BottomNav sits outside the scroll area — pinned to bottom */}
       {!hideNav && (
         <BottomNav current={screen} navigate={navigate} />
       )}

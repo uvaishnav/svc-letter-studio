@@ -77,9 +77,9 @@ export default function BottomNav({ current, navigate }: Props) {
     <nav
       style={{
         background: '#2C1F16',
-        // Only pad the top — bottom safe area is now handled by App.tsx root padding
         paddingTop: '8px',
-        paddingBottom: '10px',
+        // BottomNav owns the bottom safe-area inset (home indicator zone on iPhone)
+        paddingBottom: 'calc(10px + env(safe-area-inset-bottom, 0px))',
         borderTop: '1px solid rgba(200,169,106,0.2)',
         boxShadow: '0 -4px 20px rgba(0,0,0,0.25)',
         display: 'flex',
@@ -96,7 +96,6 @@ export default function BottomNav({ current, navigate }: Props) {
             className="flex flex-col items-center gap-[5px] px-4 transition-all active:scale-90"
             style={{ paddingTop: 4 }}
           >
-            {/* Active indicator pill */}
             <div
               style={{
                 width: active ? 20 : 0,
