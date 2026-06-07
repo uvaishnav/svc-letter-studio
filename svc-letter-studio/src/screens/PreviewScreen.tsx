@@ -118,14 +118,16 @@ export default function PreviewScreen({ navigate, state }: Props) {
   const isIOS = canShareFiles()
 
   return (
+    // No overflow or fixed height here — App.tsx scroll container handles scrolling.
+    // The iframe sits in normal page flow at 1684px so the outer scroll reaches page 2.
     <div
       className="flex flex-col"
-      style={{ minHeight: '100dvh', background: '#1C1C1E' }}
+      style={{ background: '#1C1C1E', paddingBottom: '24px' }}
     >
       {/* ── Top bar ── */}
       <div
         className="flex items-center gap-2 px-4 pt-12 pb-3"
-        style={{ background: '#1C1C1E' }}
+        style={{ background: '#1C1C1E', position: 'sticky', top: 0, zIndex: 10 }}
       >
         {/* Edit toggle — left */}
         <button
@@ -182,7 +184,7 @@ export default function PreviewScreen({ navigate, state }: Props) {
       </div>
 
       {/* ── PDF Preview area ── */}
-      <div className="flex-1 px-3 pb-6">
+      <div className="px-3">
         {instance.loading && (
           <div className="flex flex-col items-center justify-center h-64 gap-4">
             <div
@@ -210,28 +212,22 @@ export default function PreviewScreen({ navigate, state }: Props) {
           </div>
         )}
 
-        {/* Outer div scrolls on mobile; iframe is tall enough to show all pages */}
+        {/* iframe sits in normal page flow — no scroll wrapper needed.
+            App.tsx's single scroll container scrolls this entire page,
+            which is how mobile Safari/Chrome correctly reveal page 2. */}
         {instance.url && !instance.error && (
-          <div
+          <iframe
+            src={instance.url}
+            title="Letter Preview"
             style={{
-              overflowY:                'auto',
-              WebkitOverflowScrolling:  'touch',
-              borderRadius:             '12px',
+              width:        '100%',
+              height:       '1684px', // 2 × 842px A4 — scroll to reach page 2
+              border:       'none',
+              borderRadius: '12px',
+              background:   '#fff',
+              display:      'block',
             }}
-          >
-            <iframe
-              src={instance.url}
-              title="Letter Preview"
-              style={{
-                width:        '100%',
-                height:       '1684px', // ~2 A4 pages (842px each) — scroll reveals page 2
-                border:       'none',
-                borderRadius: '12px',
-                background:   '#fff',
-                display:      'block',
-              }}
-            />
-          </div>
+          />
         )}
 
         {instance.url && !instance.error && (

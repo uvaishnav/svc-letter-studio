@@ -38,13 +38,24 @@ export default function App() {
         background: rootBg,
         display: 'flex',
         flexDirection: 'column',
-        // App.tsx owns the top safe-area — pushes ALL screens below the status bar.
-        // Each screen must NOT add env(safe-area-inset-top) again.
         paddingTop: 'env(safe-area-inset-top, 0px)',
       }}
     >
-      {/* Scrollable screen content */}
-      <div style={{ flex: 1, overflowY: 'auto', minHeight: 0 }}>
+      {/* Scrollable screen content.
+          For preview: overflow must be 'auto' on the OUTER page scroll so the
+          tall iframe (1684px) is reachable. The inner wrapper is removed from
+          PreviewScreen so there is only one scroll container.
+          For all other screens: same behaviour as before. */}
+      <div
+        style={{
+          flex: 1,
+          overflowY: 'auto',
+          minHeight: 0,
+          // On preview the root div must be able to grow beyond 100dvh so the
+          // scroll container here can actually scroll down to page 2.
+          ...(isPreview ? { height: 'auto' } : {}),
+        }}
+      >
 
         {screen === 'home' && (
           <HomeScreen navigate={navigate} />
