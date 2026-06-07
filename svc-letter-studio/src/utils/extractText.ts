@@ -3,11 +3,11 @@
  * Extracts raw text from .docx (mammoth) or text-based .pdf (pdfjs-dist).
  * Returns { text, warning? } — warning is set when extraction quality is poor.
  *
- * NOTE: pdfjs GlobalWorkerOptions.workerSrc is set to a CDN URL.
- * This is the same pattern used in SVC_Billing/ocrPdf.ts which works on iOS Safari.
- * Using new URL('pdfjs-dist/build/pdf.worker.mjs', import.meta.url) crashes on
- * iOS Safari because WebKit does not support ES module Web Workers.
- * A plain HTTPS CDN URL avoids the bundler entirely and works everywhere.
+ * NOTE: pdfjs GlobalWorkerOptions.workerSrc is set to a CDN URL pinned to the
+ * EXACT same version as the installed pdfjs-dist package (6.0.227).
+ * The API version and Worker version MUST match, otherwise pdfjs throws
+ * "The API version does not match the Worker version".
+ * Using a CDN URL avoids iOS Safari's lack of ES module Worker support.
  */
 
 export interface ExtractionResult {
@@ -34,10 +34,11 @@ async function extractDocx(file: File): Promise<ExtractionResult> {
 async function extractPdf(file: File): Promise<ExtractionResult> {
   const pdfjsLib = await import('pdfjs-dist');
 
-  // CDN worker URL — same approach as SVC_Billing/ocrPdf.ts.
-  // Avoids iOS Safari's lack of ES module Worker support entirely.
+  // Pin CDN worker to EXACT installed version (pdfjs-dist@6.0.227 in package.json).
+  // Major.minor.patch must all match — pdfjs enforces strict version equality
+  // between the API bundle and the worker script.
   pdfjsLib.GlobalWorkerOptions.workerSrc =
-    'https://cdn.jsdelivr.net/npm/pdfjs-dist@4/build/pdf.worker.min.mjs';
+    'https://cdn.jsdelivr.net/npm/pdfjs-dist@6.0.227/build/pdf.worker.min.mjs';
 
   const arrayBuffer = await file.arrayBuffer();
   const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
