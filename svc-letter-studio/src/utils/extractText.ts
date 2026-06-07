@@ -3,12 +3,12 @@
  * Extracts raw text from .docx (mammoth) or text-based .pdf (pdfjs-dist).
  * Returns { text, warning? } — warning is set when extraction quality is poor.
  *
- * iOS Safari compatibility notes:
- * - file.arrayBuffer() triggers a ReadableStream async iteration path inside
- *   pdfjs-dist v6 that crashes on iOS Safari 16 and below.
- * - FileReader.readAsArrayBuffer() is the older, fully supported API on all
- *   iOS versions and avoids ReadableStream entirely.
- * - pdfjs CDN worker is pinned to exact version 6.0.227 (matches package.json).
+ * pdfjs-dist is pinned to 4.10.38 — the same version used in SVC_Billing
+ * which is confirmed working on iOS Safari. pdfjs-dist v6 uses ReadableStream
+ * async iteration internally which crashes on iOS Safari 16 and below.
+ *
+ * CDN worker is pinned to the exact same version (4.10.38).
+ * FileReader is used instead of file.arrayBuffer() for maximum iOS compatibility.
  */
 
 export interface ExtractionResult {
@@ -17,7 +17,6 @@ export interface ExtractionResult {
 }
 
 // ─── iOS-safe file reader ───────────────────────────────────────────────────────
-// Uses FileReader instead of file.arrayBuffer() — works on all iOS versions.
 function readFileAsArrayBuffer(file: File): Promise<ArrayBuffer> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -46,15 +45,11 @@ async function extractDocx(file: File): Promise<ExtractionResult> {
 async function extractPdf(file: File): Promise<ExtractionResult> {
   const pdfjsLib = await import('pdfjs-dist');
 
-  // CDN worker pinned to exact installed version — pdfjs enforces strict match.
+  // CDN worker pinned to exact same version as package.json (4.10.38).
   pdfjsLib.GlobalWorkerOptions.workerSrc =
-    'https://cdn.jsdelivr.net/npm/pdfjs-dist@6.0.227/build/pdf.worker.min.mjs';
+    'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/build/pdf.worker.min.mjs';
 
-  // Use FileReader instead of file.arrayBuffer() to avoid ReadableStream
-  // async iteration which crashes on iOS Safari 16 and below.
   const arrayBuffer = await readFileAsArrayBuffer(file);
-
-  // Pass as Uint8Array — pdfjs takes ownership without any stream wrapping.
   const data = new Uint8Array(arrayBuffer);
   const pdf  = await pdfjsLib.getDocument({ data }).promise;
 
