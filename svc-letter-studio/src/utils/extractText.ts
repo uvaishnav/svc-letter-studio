@@ -2,6 +2,11 @@
  * extractText.ts
  * Extracts raw text from .docx (mammoth) or text-based .pdf (pdfjs-dist).
  * Returns { text, warning? } — warning is set when extraction quality is poor.
+ *
+ * NOTE: pdfjs worker is intentionally disabled (workerSrc = '').
+ * iOS Safari does not support ES module Web Workers, which causes a hard crash
+ * when using pdfjs-dist's .mjs worker via new URL(..., import.meta.url).
+ * Running pdfjs on the main thread is safe for typical letter-sized documents.
  */
 
 export interface ExtractionResult {
@@ -28,11 +33,11 @@ async function extractDocx(file: File): Promise<ExtractionResult> {
 async function extractPdf(file: File): Promise<ExtractionResult> {
   const pdfjsLib = await import('pdfjs-dist');
 
-  // Use the bundled worker
-  pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
-    'pdfjs-dist/build/pdf.worker.mjs',
-    import.meta.url
-  ).toString();
+  // Disable the Web Worker entirely.
+  // iOS Safari does not support ES module workers (type: 'module'),
+  // which pdfjs-dist's .mjs worker requires. Setting workerSrc to an
+  // empty string forces pdfjs to run synchronously on the main thread.
+  pdfjsLib.GlobalWorkerOptions.workerSrc = '';
 
   const arrayBuffer = await file.arrayBuffer();
   const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
