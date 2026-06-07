@@ -3,6 +3,31 @@ import type { LetterDraft } from '../types/document';
 import { buildSystemPrompt, buildUserPrompt } from './prompts';
 import { geminiUrl } from './models';
 
+// ─── JSON Extractor ──────────────────────────────────────────────────────────────────
+// Gemini may prepend prose before a ```json fence, or return the JSON directly.
+// This handles all known shapes:
+//   1. Pure JSON string
+//   2. ```json\n{...}\n```  (with or without "json" tag)
+//   3. "Here is the output:\n```json\n{...}\n```"  (prose before fence)
+function extractJSON(raw: string): string {
+  // Case 1: fenced block anywhere in the string
+  const fenced = raw.match(/```(?:json)?\s*([\s\S]*?)```/i);
+  if (fenced) return fenced[1].trim();
+
+  // Case 2: stray prose before the first `{` or `[`
+  const braceIdx   = raw.indexOf('{');
+  const bracketIdx = raw.indexOf('[');
+
+  if (braceIdx === -1 && bracketIdx === -1) return raw.trim(); // no JSON found, let caller handle
+
+  let startIdx: number;
+  if (braceIdx === -1) startIdx = bracketIdx;
+  else if (bracketIdx === -1) startIdx = braceIdx;
+  else startIdx = Math.min(braceIdx, bracketIdx);
+
+  return raw.slice(startIdx).trim();
+}
+
 export class GeminiProvider implements AIProvider {
   private apiKey: string;
 
@@ -55,14 +80,10 @@ export class GeminiProvider implements AIProvider {
 
     console.log(`[Gemini] ✅ raw response (${raw.length} chars):`, raw.slice(0, 500));
 
-    // Strip markdown code fences defensively (even though responseMimeType is set)
-    const cleaned = raw
-      .replace(/^```(?:json)?\s*/i, '')
-      .replace(/\s*```\s*$/, '')
-      .trim();
+    const cleaned = extractJSON(raw);
 
     if (cleaned !== raw) {
-      console.warn('[Gemini] ⚠️ Markdown fences were present in response — stripped successfully');
+      console.warn('[Gemini] ⚠️ Non-JSON wrapper was present in response — stripped successfully');
     }
 
     return cleaned;
