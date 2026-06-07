@@ -29,21 +29,24 @@ export default function App() {
   const isDraft   = screen === 'draft'
 
   const rootBg  = isPreview ? '#1C1C1E' : '#F5F1E8'
-  // Only hide nav on preview (full-screen PDF view) and draft (focused editing)
   const hideNav = isPreview || isDraft
 
   return (
     <div
       style={{
+        // Use 100dvh so the root exactly matches the visual viewport on iOS Safari/PWA.
+        // Do NOT add paddingTop here — each screen handles its own safe-area-inset-top
+        // so we avoid double-counting the status bar height.
         height: '100dvh',
         background: rootBg,
         display: 'flex',
         flexDirection: 'column',
-        // Push content below the iPhone status bar
-        paddingTop: 'env(safe-area-inset-top, 0px)',
+        // Reserve the home-indicator strip at the bottom so the nav truly hugs the edge.
+        paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+        boxSizing: 'border-box',
       }}
     >
-      {/* Scrollable screen content */}
+      {/* Scrollable screen content — takes all remaining space above the nav */}
       <div style={{ flex: 1, overflowY: 'auto', minHeight: 0 }}>
 
         {screen === 'home' && (
@@ -95,7 +98,7 @@ export default function App() {
 
       </div>
 
-      {/* BottomNav is always outside the scroll container — always visible */}
+      {/* BottomNav sits outside the scroll area — always pinned to bottom of root */}
       {!hideNav && (
         <BottomNav current={screen} navigate={navigate} />
       )}

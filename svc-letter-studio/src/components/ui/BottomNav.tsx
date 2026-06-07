@@ -5,7 +5,6 @@ interface Props {
   navigate: (s: Screen) => void
 }
 
-// SVG icon components — inline for zero-dependency crisp rendering
 function IconHome({ active }: { active: boolean }) {
   const c = active ? '#C8A96A' : 'rgba(245,241,232,0.5)'
   return (
@@ -22,15 +21,9 @@ function IconCompose({ active }: { active: boolean }) {
   const c = active ? '#C8A96A' : 'rgba(245,241,232,0.5)'
   return (
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-      <path d="M12 2L13.09 8.26L19 9L13.09 9.74L12 16L10.91 9.74L5 9L10.91 8.26L12 2Z"
-        fill={c}
-      />
-      <path d="M19 15L19.54 17.73L22 18L19.54 18.27L19 21L18.46 18.27L16 18L18.46 17.73L19 15Z"
-        fill={c} opacity="0.6"
-      />
-      <path d="M5 3.5L5.27 4.87L6.5 5L5.27 5.13L5 6.5L4.73 5.13L3.5 5L4.73 4.87L5 3.5Z"
-        fill={c} opacity="0.45"
-      />
+      <path d="M12 2L13.09 8.26L19 9L13.09 9.74L12 16L10.91 9.74L5 9L10.91 8.26L12 2Z" fill={c} />
+      <path d="M19 15L19.54 17.73L22 18L19.54 18.27L19 21L18.46 18.27L16 18L18.46 17.73L19 15Z" fill={c} opacity="0.6" />
+      <path d="M5 3.5L5.27 4.87L6.5 5L5.27 5.13L5 6.5L4.73 5.13L3.5 5L4.73 4.87L5 3.5Z" fill={c} opacity="0.45" />
     </svg>
   )
 }
@@ -43,9 +36,9 @@ function IconDraft({ active }: { active: boolean }) {
         stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"
         fill={active ? 'rgba(200,169,106,0.12)' : 'none'}
       />
-      <line x1="8" y1="13" x2="16" y2="13" stroke={c} strokeWidth="1.5" strokeLinecap="round"/>
-      <line x1="8" y1="17" x2="12" y2="17" stroke={c} strokeWidth="1.5" strokeLinecap="round"/>
-      <polyline points="14 2 14 8 20 8" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+      <line x1="8" y1="13" x2="16" y2="13" stroke={c} strokeWidth="1.5" strokeLinecap="round" />
+      <line x1="8" y1="17" x2="12" y2="17" stroke={c} strokeWidth="1.5" strokeLinecap="round" />
+      <polyline points="14 2 14 8 20 8" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   )
 }
@@ -84,8 +77,9 @@ export default function BottomNav({ current, navigate }: Props) {
     <nav
       style={{
         background: '#2C1F16',
+        // Only pad the top — bottom safe area is now handled by App.tsx root padding
         paddingTop: '8px',
-        paddingBottom: 'calc(10px + env(safe-area-inset-bottom))',
+        paddingBottom: '10px',
         borderTop: '1px solid rgba(200,169,106,0.2)',
         boxShadow: '0 -4px 20px rgba(0,0,0,0.25)',
         display: 'flex',
